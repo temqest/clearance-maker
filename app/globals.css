@@ -1,0 +1,74 @@
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-app: #edf3ff;
+  --bg-header: #ffffff;
+  --bg-sidebar: #ffffff;
+  --bg-surface-blue: #f7faff;
+  --bg-preview: #eaf1ff;
+
+  --text-primary: #0f172a;
+  --text-secondary: #1f2937;
+
+  --blue-primary: #1d4ed8;
+  --blue-strong: #174ea6;
+  --border-blue-soft: #bfd2f0;
+  --border-blue: #b9c9e6;
+  --border-blue-light: #d5e2f7;
+  --scrollbar-blue: #a8bde3;
+
+  --button-hover-dark: #0f172a;
+  --white: #ffffff;
+  --blue-rgb: 29, 78, 216;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  line-height: 1.4;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--bg-app);
+  color: var(--text-primary);
+}
+
+.app-shell {
+  height: 100vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 960px) {
+  .app-shell {
+    height: auto;
+    min-height: 100vh;
+  }
+}
+
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 6mm;
+  }
+
+  .noPrint {
+    display: none !important;
+  }
+
+  body {
+    background: var(--white);
+  }
+
+  .app-shell {
+    height: auto;
+    overflow: visible;
+  }
+}

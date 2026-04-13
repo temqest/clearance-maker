@@ -1,0 +1,115 @@
+.panel {
+  width: 340px;
+  flex-shrink: 0;
+  background: var(--bg-sidebar);
+  border-right: 1px solid var(--border-blue-soft);
+  overflow-y: auto;
+  padding: 18px 16px 26px;
+}
+
+.panel::-webkit-scrollbar {
+  width: 4px;
+}
+
+.panel::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-blue);
+  border-radius: 2px;
+}
+
+.sectionBlock {
+  margin-bottom: 16px;
+  padding-bottom: 10px;
+}
+
+.sectionBlock:last-of-type {
+  margin-bottom: 10px;
+}
+
+.sectionTitle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 2.1px;
+  color: var(--blue-primary);
+  text-transform: uppercase;
+  margin: 14px 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border-blue-light);
+}
+
+.panel .sectionTitle:first-child {
+  margin-top: 0;
+}
+
+.panel label {
+  display: block;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-bottom: 5px;
+}
+
+.fieldGroup {
+  margin-bottom: 12px;
+}
+
+.panel input,
+.panel select,
+.panel textarea {
+  width: 100%;
+  background: var(--bg-surface-blue);
+  border: 1px solid var(--border-blue);
+  color: var(--text-primary);
+  border-radius: 8px;
+  padding: 9px 10px;
+  font-size: 13px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  font-family: inherit;
+}
+
+.panel textarea {
+  resize: vertical;
+  min-height: 52px;
+}
+
+.panel input:focus,
+.panel select:focus,
+.panel textarea:focus {
+  border-color: var(--blue-primary);
+  box-shadow: 0 0 0 2px rgba(var(--blue-rgb), 0.12);
+}
+
+.fileUploadInput {
+  padding: 3px;
+  background: transparent;
+  border: none;
+  color: var(--text-secondary);
+}
+
+.uploadedTag {
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--blue-primary);
+}
+
+.actionRow {
+  margin-top: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.removeButton {
+  border: 1px solid var(--border-blue);
+  background: var(--white);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 4px 8px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.removeButton:hover {
+  border-color: var(--blue-primary);
+  color: var(--blue-primary);
+}

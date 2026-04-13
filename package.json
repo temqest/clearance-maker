@@ -1,0 +1,26 @@
+{
+  "name": "rtc-clearance-editor",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.103.0",
+    "@tiptap/core": "^3.22.3",
+    "@tiptap/extension-image": "^3.22.3",
+    "@tiptap/extension-link": "^3.22.3",
+    "@tiptap/extension-underline": "^3.22.3",
+    "@tiptap/pm": "^3.22.3",
+    "@tiptap/react": "^3.22.3",
+    "@tiptap/starter-kit": "^3.22.3",
+    "docx": "9.0.3",
+    "file-saver": "^2.0.5",
+    "next": "^16.2.3",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
+  }
+}

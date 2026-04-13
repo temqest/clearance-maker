@@ -1,0 +1,81 @@
+.photoUploadArea {
+  border: 2px dashed var(--border-blue);
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  margin-top: 8px;
+  background: var(--bg-surface-blue);
+}
+
+.uploadLabel {
+  cursor: pointer;
+  display: block;
+}
+
+.actionButtons {
+  display: flex;
+  gap: 8px;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.actionButton {
+  border: 1px solid var(--border-blue);
+  background: var(--white);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.actionButton:hover {
+  border-color: var(--blue-primary);
+  color: var(--blue-primary);
+}
+
+.photoUploadArea:hover {
+  border-color: var(--blue-primary);
+}
+
+.placeholder {
+  color: var(--text-secondary);
+  font-size: 11px;
+}
+
+.camera {
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin-bottom: 6px;
+  color: var(--blue-primary);
+}
+
+.photoThumb {
+  width: 80px;
+  height: 100px;
+  object-fit: cover;
+  border-radius: 4px;
+  display: block;
+  margin: 0 auto;
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.removePhotoButton {
+  margin-top: 8px;
+  border: 1px solid var(--border-blue);
+  background: var(--white);
+  color: var(--text-secondary);
+  border-radius: 6px;
+  padding: 5px 10px;
+  font-size: 11px;
+  cursor: pointer;
+}
+
+.removePhotoButton:hover {
+  border-color: var(--blue-primary);
+  color: var(--blue-primary);
+}

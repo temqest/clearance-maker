@@ -1,0 +1,492 @@
+.previewPanel {
+  flex: 1;
+  background: var(--bg-preview);
+  overflow-y: auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 20px;
+}
+
+.previewPanel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.previewPanel::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-blue);
+  border-radius: 3px;
+}
+
+.doc {
+  background: #fff;
+  width: 794px;
+  min-height: 1123px;
+  padding: 42px 70px 46px;
+  color: #111;
+  font-family: "Times New Roman", Times, serif;
+  font-size: 15.5px;
+  position: relative;
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  flex-shrink: 0;
+}
+
+.watermarkSeal {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  opacity: 0.07;
+  width: 68%;
+  max-width: 520px;
+  filter: grayscale(20%);
+  pointer-events: none;
+}
+
+.docHeader {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  text-align: center;
+  margin-bottom: 14px;
+}
+
+.docSeal {
+  width: 64px;
+  height: 64px;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.docTitleBlock {
+  text-align: center;
+  line-height: 1.28;
+}
+
+.republic {
+  font-size: 14px;
+}
+
+.courtName {
+  font-size: 17px;
+  letter-spacing: 0.2px;
+  font-weight: 700;
+}
+
+.sub {
+  font-size: 14px;
+}
+
+.email {
+  font-size: 13px;
+  font-style: italic;
+}
+
+.docSectionTitle {
+  text-align: center;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  margin: 24px 0 20px;
+}
+
+.docMainTitle {
+  text-align: center;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 8px;
+  margin: 0 0 26px;
+}
+
+.docBody {
+  line-height: 2;
+  text-align: justify;
+  font-size: 16.2px;
+}
+
+.concernLine {
+  letter-spacing: 0.4px;
+}
+
+.mainParagraph {
+  text-indent: 46px;
+}
+
+.field {
+  text-decoration: underline;
+  font-weight: 700;
+}
+
+.findingLine {
+  width: 100%;
+  margin: 12px 0 4px;
+  padding-left: 120px;
+  padding-right: 80px;
+  text-align: left;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.findingLine strong {
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.purposeLine {
+  width: 100%;
+  margin: 0 0 12px;
+  padding-left: 120px;
+  padding-right: 80px;
+  text-align: left;
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.purposeLine strong {
+  text-decoration: underline;
+  overflow-wrap: anywhere;
+}
+
+.casesBlock {
+  text-align: right;
+  margin: 8px 0 14px;
+  line-height: 2;
+  padding-right: 86px;
+}
+
+.issuedLine {
+  margin: 10px 0;
+}
+
+.givenLine {
+  text-align: center;
+  margin: 12px 0 16px;
+}
+
+.dayField,
+.monthField,
+.yearField {
+  font-weight: 700;
+  text-decoration: underline;
+  margin: 0 4px;
+}
+
+.sigBlock {
+  position: relative;
+  text-align: center;
+  margin-top: 34px;
+  width: 320px;
+  margin-left: auto;
+  margin-right: 20px;
+}
+
+.signatureLayer {
+  position: absolute;
+  top: -18px;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.digitalSignature {
+  width: 180px;
+  height: 64px;
+  object-fit: contain;
+  margin: 0;
+  display: block;
+}
+
+.sigName {
+  font-weight: 700;
+  letter-spacing: 1.1px;
+  font-size: 15px;
+  display: inline-block;
+  text-decoration: none;
+}
+
+.sigRole {
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.25;
+}
+
+.stampBox {
+  border: 2px solid #333;
+  display: inline-block;
+  padding: 8px 16px;
+  font-size: 15px;
+  margin-top: 8px;
+  line-height: 1.45;
+}
+
+.stampTitle {
+  font-style: italic;
+}
+
+.notValid {
+  text-align: right;
+  font-weight: 700;
+  font-size: 13px;
+  margin-top: 16px;
+  letter-spacing: 1px;
+  padding-right: 26px;
+}
+
+.bottomSection {
+  display: flex;
+  gap: 22px;
+  margin-top: 26px;
+  align-items: flex-end;
+}
+
+.orBlock {
+  font-size: 14.5px;
+  line-height: 1.35;
+}
+
+.orBlock td {
+  padding-right: 8px;
+}
+
+.orBlock td:first-child {
+  white-space: nowrap;
+  color: #1d1d1d;
+}
+
+.orBlock td:last-child {
+  text-decoration: underline;
+  font-weight: 500;
+}
+
+.signatureLineWrap {
+  margin-top: 24px;
+}
+
+.sigLineBlock {
+  margin-top: 10px;
+  border-top: 1px solid #333;
+  width: 280px;
+}
+
+.sigLineLabel {
+  font-size: 14px;
+  margin-top: 6px;
+}
+
+.photoBlock {
+  width: 184px;
+  flex-shrink: 0;
+  text-align: center;
+}
+
+.docPhoto,
+.noPhoto {
+  width: 180px;
+  height: 208px;
+}
+
+.docPhoto {
+  object-fit: cover;
+  border: 1px solid #555;
+}
+
+.noPhoto {
+  border: 1px solid #aaa;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: #aaa;
+  background: #f5f5f5;
+}
+
+.thumbmarkBox {
+  width: 136px;
+  height: 136px;
+  border: 1px solid #555;
+  text-align: center;
+  padding: 38px 10px 10px;
+  font-size: 11px;
+  flex-shrink: 0;
+  color: #555;
+  line-height: 1.2;
+}
+
+.docNote {
+  font-style: italic;
+  font-size: 14px;
+  margin-top: 20px;
+}
+
+.certNo {
+  text-align: center;
+  font-size: 14px;
+  font-weight: 700;
+  margin-top: 54px;
+}
+
+.certNoValue {
+  display: inline-block;
+  border-bottom: 1px solid #111;
+  padding: 0 2px 1px;
+}
+
+@media (max-width: 1100px) {
+  .doc {
+    width: 100%;
+    min-height: auto;
+    padding: 22px;
+    font-size: 12.5px;
+  }
+
+  .republic {
+    font-size: 12px;
+  }
+
+  .courtName {
+    font-size: 20px;
+  }
+
+  .sub,
+  .email {
+    font-size: 12px;
+  }
+
+  .docSectionTitle {
+    font-size: 16px;
+  }
+
+  .docMainTitle {
+    font-size: 24px;
+    letter-spacing: 6px;
+  }
+
+  .digitalSignature {
+    width: 130px;
+    height: 44px;
+  }
+
+  .sigName {
+    font-size: 18px;
+  }
+
+  .sigRole {
+    font-size: 15px;
+  }
+
+  .notValid {
+    font-size: 14px;
+  }
+
+  .orBlock {
+    font-size: 13px;
+  }
+
+  .sigLineLabel {
+    font-size: 13px;
+  }
+
+  .thumbmarkBox {
+    font-size: 12px;
+    width: 90px;
+    height: 90px;
+    padding: 20px 6px 6px;
+  }
+
+  .docNote {
+    font-size: 13px;
+  }
+
+  .certNo {
+    font-size: 13px;
+    margin-top: 20px;
+  }
+}
+
+@media print {
+  .previewPanel {
+    background: var(--white);
+    padding: 0;
+    display: block;
+    overflow: visible;
+  }
+
+  .doc {
+    width: 196mm;
+    min-height: auto;
+    padding: 9mm 12mm 8mm;
+    margin: 0 auto;
+    box-shadow: none;
+    font-size: 13.2px;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+
+  .docHeader {
+    margin-bottom: 8px;
+  }
+
+  .docSectionTitle {
+    margin: 14px 0 12px;
+  }
+
+  .docMainTitle {
+    margin: 0 0 14px;
+    font-size: 19px;
+  }
+
+  .docBody {
+    line-height: 1.65;
+    font-size: 13.6px;
+  }
+
+  .casesBlock {
+    margin: 4px 0 10px;
+  }
+
+  .sigBlock {
+    margin-top: 20px;
+  }
+
+  .stampBox {
+    margin-top: 4px;
+  }
+
+  .notValid {
+    margin-top: 10px;
+  }
+
+  .bottomSection {
+    margin-top: 14px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  .signatureLineWrap {
+    margin-top: 14px;
+  }
+
+  .docPhoto,
+  .noPhoto {
+    width: 168px;
+    height: 194px;
+  }
+
+  .thumbmarkBox {
+    width: 124px;
+    height: 124px;
+    padding-top: 32px;
+  }
+
+  .docNote {
+    margin-top: 12px;
+  }
+
+  .certNo {
+    margin-top: 26px;
+  }
+}

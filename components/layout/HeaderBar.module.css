@@ -1,0 +1,109 @@
+.header {
+  background: var(--bg-header);
+  border-bottom: 1px solid var(--border-blue-soft);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.titleGroup {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.titleLink {
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--blue-strong);
+  letter-spacing: 1px;
+  text-decoration: none;
+}
+
+.titleLink:hover {
+  text-decoration: underline;
+}
+
+.homeButton {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border-blue);
+  border-radius: 6px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--blue-strong);
+  background: var(--white);
+}
+
+.homeButton:hover {
+  border-color: var(--blue-primary);
+  color: var(--blue-primary);
+}
+
+.homeButton svg {
+  width: 16px;
+  height: 16px;
+  fill: currentColor;
+}
+
+.header span {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+
+.actionGroup {
+  display: flex;
+  gap: 8px;
+}
+
+.docxButton {
+  background: var(--white);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-blue);
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.docxButton:hover {
+  border-color: var(--blue-primary);
+  color: var(--blue-primary);
+}
+
+.docxButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+.printButton {
+  background: var(--blue-primary);
+  color: var(--white);
+  border: 1px solid var(--blue-primary);
+  padding: 7px 18px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.printButton:hover {
+  background: var(--button-hover-dark);
+  border-color: var(--button-hover-dark);
+}
+
+@media (max-width: 860px) {
+  .header {
+    flex-wrap: wrap;
+  }
+
+  .header span {
+    order: 3;
+    width: 100%;
+  }
+}
