@@ -1,0 +1,172 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>RTC Clearance Template</title>
+  <link rel="stylesheet" href="./rtc-clearance-template.css" />
+</head>
+<body>
+  <section class="preview-panel">
+    <article class="paper">
+      <img src="/assets/supreme-court-seal.png" alt="" class="watermark" aria-hidden="true" />
+
+      <header class="doc-header">
+        <img src="/assets/supreme-court-seal-left.png" alt="Supreme Court seal" class="doc-seal" />
+        <div class="doc-title-block">
+          <div class="republic">Republic of the Philippines</div>
+          <div class="court-name field-static court-name-text">REGIONAL TRIAL COURT</div>
+          <div class="sub field-static judicial-region">5th Judicial Region</div>
+          <div class="sub field-static court-city">Iriga City</div>
+          <div class="email">Email add: <span class="field-static court-email">rtc1iriocc@judiciary.gov.ph</span></div>
+          <div class="email">Tel No: <span class="field-static court-tel">(054) 299-5922</span></div>
+        </div>
+        <img src="/assets/regional-trial-court-seal-right.png" alt="Regional Trial Court seal" class="doc-seal" />
+      </header>
+
+      <div class="doc-section-title">OFFICE OF THE CLERK OF COURT</div>
+      <div class="doc-main-title">C L E A R A N C E</div>
+
+      <main class="doc-body">
+        <p class="concern-line">TO WHOM IT MAY CONCERN:</p>
+
+        <p class="main-paragraph">
+          In connection with the application for a Regional Trial Court Clearance of
+          <span class="field applicant-name"></span>,
+          <span class="inline-gap nationality">Filipino,</span>
+          <span class="field civil-status"></span>, born on
+          <span class="field birth-date"></span> and presently residing at
+          <span class="field address-field"></span> whose signature, right thumb mark, recent picture and Community Certificate Number are shown below, this office certifies to the following:
+        </p>
+
+        <div class="finding-line">
+          <span>FINDING:</span>
+          <span class="field finding-field">NO CRIMINAL OR CIVIL CASE FILED OR PENDING.</span>
+        </div>
+        <div class="purpose-line">
+          <span>PURPOSE:</span>
+          <span class="field purpose-field">LOCAL EMPLOYMENT</span>
+        </div>
+
+        <div class="cases-block">
+          <div class="verified-by">Verified by:</div>
+          <div>Criminal Cases: <span class="field-line case-line"></span></div>
+          <div>Civil Cases: <span class="field-line case-line"></span></div>
+        </div>
+
+        <div class="issued-line">Issued on the basis of the records/dockets obtained in this office since September 16, 1971 up to the present.</div>
+
+        <div class="given-line">
+          Given this <span class="field day-field"></span>
+          day of <span class="field month-field"></span>
+          <span class="field year-field"></span> at
+          <span class="field place-field">Iriga City, Philippines</span>.
+        </div>
+
+        <div class="sig-block">
+          <div class="signature-layer">
+            <img src="" alt="Digital signature" class="digital-signature signature-image" />
+          </div>
+          <div class="sig-name clerk-name">HARLETTE R. ARROYO-POTENCIO</div>
+          <div class="sig-role clerk-title-1">Clerk of Court VI</div>
+          <div class="sig-role clerk-title-2">Ex-Officio Provincial Sheriff &amp; Notary Public</div>
+        </div>
+
+        <div class="stamp-seal-row">
+          <div class="stamp-box">
+            <div class="stamp-title">Documentary Stamp Tax Paid</div>
+            <div>O.R. No. <span class="field stamp-or-field"></span></div>
+            <div><span class="field stamp-date-field"></span></div>
+          </div>
+          <div class="assistant-signatory-wrap">
+            <div class="assistant-sig-name">MARIBEL B. LLAGAS</div>
+            <div class="assistant-sig-role">Clerk of Court V</div>
+            <div class="not-valid">NOT VALID WITHOUT DRY SEAL</div>
+          </div>
+        </div>
+
+        <div class="bottom-section">
+          <div class="or-block">
+            <div>O.R. Nos. : <span class="field or-no-field"></span></div>
+            <div>Date Issued: <span class="field or-date-field"></span></div>
+            <div>CTC NO. : <span class="field ctc-field"></span></div>
+            <div>Issued at  : <span class="field issued-at-field"></span></div>
+            <div>Issued on  : <span class="field issued-on-field"></span></div>
+
+            <div class="signature-line-wrap">
+              <div class="sig-line-block"></div>
+              <div class="sig-line-label">Applicant's Signature</div>
+            </div>
+          </div>
+
+          <div class="photo-block">
+            <img src="" alt="Applicant" class="doc-photo applicant-photo" />
+            <div class="no-photo">Picture</div>
+          </div>
+
+          <div class="thumbmark-box">
+            <span>Right Hand</span>
+            <span>thumb mark</span>
+          </div>
+        </div>
+      </main>
+
+      <div class="doc-note"><em>Note</em>: <strong><em>Valid for 6 months from the date of issue.</em></strong></div>
+      <div class="doc-initials">MBL/jnr</div>
+      <div class="cert-no">Clearance/Certification No.: <span class="field cert-no-value"></span></div>
+    </article>
+  </section>
+
+  <script>
+    function setText(selector, value) {
+      var el = document.querySelector(selector);
+      if (el) el.textContent = value || "\u00a0";
+    }
+
+    function setImage(selector, value) {
+      var el = document.querySelector(selector);
+      if (!el) return;
+      if (value) {
+        el.src = value;
+        el.style.display = "block";
+      } else {
+        el.removeAttribute("src");
+        el.style.display = "none";
+      }
+    }
+
+    function renderClearance(data) {
+      setText(".applicant-name", data.fullName);
+      setText(".nationality", (data.nationality || "Filipino") + ",");
+      setText(".civil-status", data.civilStatus);
+      setText(".birth-date", data.dob);
+      setText(".address-field", data.address);
+      setText(".finding-field", data.finding || "NO CRIMINAL OR CIVIL CASE FILED OR PENDING.");
+      setText(".purpose-field", data.purpose || "LOCAL EMPLOYMENT");
+      setText(".day-field", data.givenDay);
+      setText(".month-field", data.givenMonth);
+      setText(".year-field", data.givenYear);
+      setText(".place-field", data.givenPlace || "Iriga City, Philippines");
+      setText(".clerk-name", data.clerkName || "HARLETTE R. ARROYO-POTENCIO");
+      setText(".clerk-title-1", data.clerkTitle1 || "Clerk of Court VI");
+      setText(".clerk-title-2", data.clerkTitle2 || "Ex-Officio Provincial Sheriff & Notary Public");
+      setText(".stamp-or-field", data.stampOR);
+      setText(".stamp-date-field", data.stampDate);
+      setText(".or-no-field", data.orNo);
+      setText(".or-date-field", data.orDate);
+      setText(".ctc-field", data.ctc);
+      setText(".issued-at-field", data.issuedAt);
+      setText(".issued-on-field", data.issuedOn);
+      setText(".cert-no-value", data.certNo);
+      setImage(".signature-image", data.signatureSrc);
+      setImage(".applicant-photo", data.photoSrc);
+
+      var photo = document.querySelector(".applicant-photo");
+      var noPhoto = document.querySelector(".no-photo");
+      if (photo && noPhoto) {
+        noPhoto.style.display = photo.getAttribute("src") ? "none" : "flex";
+      }
+    }
+  </script>
+</body>
+</html>

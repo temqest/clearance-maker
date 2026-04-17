@@ -1,7 +1,7 @@
 import Link from "next/link";
 import styles from "./HeaderBar.module.css";
 
-export default function HeaderBar({ onPrint, onSave, isSaving }) {
+export default function HeaderBar({ onPrint, onSave, isSaving, onExportDocx, isExportingDocx }) {
   const handlePrint = () => {
     if (typeof onPrint === "function") {
       onPrint();
@@ -25,11 +25,21 @@ export default function HeaderBar({ onPrint, onSave, isSaving }) {
       <span>Live Document Preview</span>
       <div className={styles.actionGroup}>
         {typeof onSave === "function" && (
-          <button type="button" className={styles.docxButton} onClick={onSave} disabled={isSaving}>
+          <button type="button" className={styles.saveButton} onClick={onSave} disabled={isSaving}>
             {isSaving ? "Saving..." : "Save Document"}
           </button>
         )}
-        <button type="button" className={styles.printButton} onClick={handlePrint}>
+        {typeof onExportDocx === "function" && (
+          <button
+            type="button"
+            className={styles.exportDocxButton}
+            onClick={onExportDocx}
+            disabled={isExportingDocx}
+          >
+            {isExportingDocx ? "Exporting DOCX..." : "Export DOCX"}
+          </button>
+        )}
+        <button type="button" className={styles.pdfButton} onClick={handlePrint}>
           Print / Save PDF
         </button>
       </div>

@@ -55,8 +55,15 @@ body {
 
 @media print {
   @page {
-    size: A4 portrait;
-    margin: 6mm;
+    size: 8.5in 13in;
+    margin: 0;
+  }
+
+  html,
+  body {
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
   }
 
   .noPrint {
@@ -65,10 +72,14 @@ body {
 
   body {
     background: var(--white);
+    overflow: visible !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
   }
 
   .app-shell {
-    height: auto;
-    overflow: visible;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
 }

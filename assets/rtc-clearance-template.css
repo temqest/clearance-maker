@@ -1,0 +1,524 @@
+@page {
+  size: A4;
+  margin: 0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  margin: 0;
+  background: #eef2f7;
+  font-family: "Bookman Old Style", Bookman, "Times New Roman", serif;
+}
+
+.preview-panel {
+  min-height: 100vh;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  padding: 6mm;
+}
+
+.paper {
+  width: 210mm;
+  height: 297mm;
+  padding: 22mm 22mm 22mm 22mm;
+  background: #fff;
+  position: relative;
+  color: #111;
+  font-size: 4.72mm;
+  line-height: 1.2;
+  box-shadow: 0 2.6mm 8.8mm rgba(10, 25, 56, 0.28);
+  overflow: hidden;
+}
+
+.watermark {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 165mm;
+  height: 165mm;
+  transform: translate(-50%, -50%);
+  opacity: 0.09;
+  object-fit: contain;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.paper > * {
+  position: relative;
+  z-index: 1;
+}
+
+.doc-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  width: 100%;
+  gap: 1mm;
+}
+
+.doc-seal {
+  width: 16.5mm;
+  height: 16.5mm;
+  object-fit: contain;
+  flex-shrink: 0;
+}
+
+.doc-title-block {
+  width: 100%;
+  flex: 1;
+  text-align: center;
+  line-height: 1.15;
+}
+
+.republic,
+.sub {
+  font-size: 4.35mm;
+  line-height: 1.12;
+}
+
+.court-name {
+  font-size: 4.8mm;
+  font-weight: 700;
+  letter-spacing: 0.07mm;
+  line-height: 1.08;
+}
+
+.email {
+  font-size: 3.88mm;
+  line-height: 1.15;
+}
+
+.doc-section-title {
+  margin-top: 3.5mm;
+  text-align: center;
+  font-size: 4.85mm;
+  line-height: 1.1;
+  letter-spacing: 0.02mm;
+  font-weight: 700;
+}
+
+.doc-main-title {
+  margin-top: 2.5mm;
+  margin-right: -2.1mm;
+  text-align: center;
+  font-size: 6.5mm;
+  line-height: 1;
+  font-weight: 700;
+  letter-spacing: 2.2mm;
+  text-decoration: underline;
+  text-decoration-thickness: 0.26mm;
+  text-underline-offset: 0.9mm;
+}
+
+.doc-body {
+  margin-top: 5mm;
+  font-size: 4.72mm;
+  line-height: 1.48;
+  text-align: justify;
+}
+
+.concern-line {
+  margin: 0 0 1.2mm 0;
+  font-size: 4.86mm;
+  line-height: 1.1;
+  font-weight: 700;
+}
+
+.main-paragraph {
+  margin: 4.8mm 0 0;
+  text-indent: 13mm;
+  line-height: 1.56;
+  text-align: justify;
+}
+
+.field {
+  display: inline-block;
+  border-bottom: 0.28mm solid #111;
+  line-height: 1;
+  padding: 0 0.6mm 0.18mm;
+  vertical-align: baseline;
+  font-weight: 700;
+  min-height: 5.2mm;
+}
+
+.field-static {
+  font-weight: inherit;
+}
+
+.inline-gap {
+  margin-left: 0.8mm;
+}
+
+.applicant-name {
+  min-width: 51.5mm;
+  margin-left: 1.3mm;
+}
+
+.civil-status {
+  min-width: 17.5mm;
+  margin-left: 1.4mm;
+}
+
+.birth-date {
+  min-width: 31mm;
+  margin-left: 1.3mm;
+}
+
+.address-field {
+  min-width: 76.5mm;
+  margin-left: 1.3mm;
+}
+
+.finding-line,
+.purpose-line {
+  line-height: 1.15;
+  padding-left: 13mm;
+  font-weight: 700;
+}
+
+.finding-line {
+  margin-top: 4mm;
+}
+
+.purpose-line {
+  margin-top: 1.5mm;
+}
+
+.finding-field {
+  margin-left: 2mm;
+  min-width: 93mm;
+  font-weight: 700;
+}
+
+.purpose-field {
+  margin-left: 2mm;
+  min-width: 55mm;
+  font-weight: 700;
+}
+
+.cases-block {
+  margin-top: 4.2mm;
+  margin-right: 1.8mm;
+  text-align: right;
+  line-height: 1.1;
+  font-size: 4.72mm;
+}
+
+.verified-by {
+  margin-right: 35.5mm;
+  font-weight: 700;
+  margin-bottom: 0.5mm;
+}
+
+.field-line {
+  display: inline-block;
+  border-bottom: 0.24mm solid #111;
+  vertical-align: baseline;
+}
+
+.case-line {
+  width: 28.5mm;
+  margin-left: 3mm;
+}
+
+.issued-line {
+  margin-top: 6mm;
+  text-indent: 13mm;
+  line-height: 1.22;
+  font-size: 4.72mm;
+}
+
+.given-line {
+  margin-top: 5.5mm;
+  text-indent: 13mm;
+  font-size: 4.72mm;
+  line-height: 1.18;
+}
+
+.day-field {
+  min-width: 12mm;
+  margin-left: 1.4mm;
+  text-align: center;
+}
+
+.month-field {
+  min-width: 27.5mm;
+  margin-left: 1.4mm;
+}
+
+.year-field {
+  min-width: 17.5mm;
+  margin-left: 1.1mm;
+  text-align: center;
+}
+
+.place-field {
+  min-width: 50mm;
+  margin-left: 1.3mm;
+}
+
+.sig-block {
+  margin-top: 9mm;
+  margin-left: auto;
+  width: 92mm;
+  position: relative;
+  text-align: center;
+}
+
+.signature-layer {
+  position: absolute;
+  top: -10mm;
+  left: 0;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.digital-signature {
+  width: 46mm;
+  height: 18mm;
+  object-fit: contain;
+  display: none;
+}
+
+.sig-name {
+  font-size: 5.15mm;
+  line-height: 1.05;
+  font-weight: 700;
+  margin-top: 1mm;
+}
+
+.sig-role {
+  font-size: 4.5mm;
+  line-height: 1.1;
+  font-style: italic;
+}
+
+.stamp-seal-row {
+  margin-top: 7.8mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 2.5mm;
+}
+
+.stamp-box {
+  width: 75mm;
+  min-height: 28mm;
+  border: 0.55mm solid #000;
+  padding: 2.4mm 2.8mm;
+  text-align: center;
+  line-height: 1.25;
+  font-size: 4.72mm;
+}
+
+.stamp-title {
+  margin-bottom: 1mm;
+  font-weight: 700;
+  font-size: 4.72mm;
+}
+
+.stamp-or-field {
+  min-width: 37.5mm;
+  margin-left: 1.4mm;
+  text-align: left;
+}
+
+.stamp-date-field {
+  min-width: 34.5mm;
+  text-align: center;
+  margin-left: 1.3mm;
+}
+
+.assistant-signatory-wrap {
+  width: 79mm;
+  padding-bottom: 1.4mm;
+  text-align: right;
+}
+
+.assistant-sig-name {
+  font-size: 5.15mm;
+  line-height: 1.12;
+  font-weight: 700;
+}
+
+.assistant-sig-role {
+  font-size: 4.5mm;
+  line-height: 1.1;
+  font-style: italic;
+}
+
+.not-valid {
+  margin-top: 3.2mm;
+  font-weight: 700;
+  font-size: 4.72mm;
+  line-height: 1.12;
+}
+
+.bottom-section {
+  margin-top: 5mm;
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 2.8mm;
+}
+
+.or-block {
+  width: 80mm;
+  line-height: 1.12;
+  font-size: 4.72mm;
+}
+
+.or-block > div {
+  margin-top: 0.5mm;
+}
+
+.or-no-field,
+.or-date-field,
+.ctc-field,
+.issued-at-field,
+.issued-on-field {
+  min-width: 43mm;
+  text-align: left;
+  font-weight: 400;
+  margin-left: 1.3mm;
+}
+
+.or-no-field {
+  min-width: 42.5mm;
+}
+
+.ctc-field {
+  min-width: 28.5mm;
+}
+
+.photo-block {
+  width: 42mm;
+  position: relative;
+}
+
+.doc-photo,
+.no-photo {
+  width: 100%;
+  height: 43mm;
+  border: 0.27mm solid #111;
+}
+
+.doc-photo {
+  object-fit: cover;
+  display: none;
+}
+
+.no-photo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #6d6d6d;
+  font-size: 4.72mm;
+}
+
+.thumbmark-box {
+  width: 32mm;
+  height: 43mm;
+  border: 0.27mm solid #111;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1.08;
+  text-align: center;
+  font-size: 4.72mm;
+}
+
+.signature-line-wrap {
+  margin-top: 8mm;
+  width: 62.5mm;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.sig-line-block {
+  width: 100%;
+  height: 0;
+  border-top: 0.27mm solid #111;
+}
+
+.sig-line-label {
+  margin-top: 1.6mm;
+  text-align: center;
+  font-size: 4.72mm;
+}
+
+.doc-note {
+  margin-top: 7.5mm;
+  font-size: 4.45mm;
+  line-height: 1.12;
+}
+
+.doc-initials {
+  margin-top: 1.2mm;
+  font-size: 4.72mm;
+  line-height: 1;
+}
+
+.cert-no {
+  margin-top: 11mm;
+  font-size: 4.7mm;
+  text-align: right;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cert-no-value {
+  min-width: 12mm;
+  margin-left: 1.4mm;
+  text-align: center;
+}
+
+@media (max-width: 1180px) {
+  .paper {
+    transform: scale(0.86);
+    transform-origin: top center;
+  }
+}
+
+@media print {
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    margin: 0;
+    background: #fff;
+  }
+
+  .preview-panel {
+    padding: 0;
+    display: block;
+    overflow: visible;
+    min-height: auto;
+  }
+
+  .paper {
+    width: 210mm;
+    height: 297mm;
+    box-shadow: none;
+    margin: 0;
+    page-break-after: avoid;
+    padding: 22mm 22mm 22mm 22mm;
+  }
+}

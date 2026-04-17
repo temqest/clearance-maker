@@ -6,6 +6,7 @@ import HeaderBar from "components/layout/HeaderBar";
 import EditorPanel from "components/editor/EditorPanel";
 import PreviewPanel from "components/preview/PreviewPanel";
 import { defaultClearanceData } from "lib/defaultClearanceData";
+import { exportClearanceDocx } from "lib/exportDocx";
 import { blobToDataUrl, dataUrlToBlob, getFileExtensionFromMime } from "lib/fileTransforms";
 import { buildClearanceFileName } from "lib/printFileName";
 import { createSupabaseBrowserClient } from "lib/supabase/client";
@@ -27,6 +28,7 @@ export default function EditorClientPage({ initialDocumentId }) {
   const [currentDocumentId, setCurrentDocumentId] = useState(initialDocumentId || "");
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isExportingDocx, setIsExportingDocx] = useState(false);
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
 
@@ -295,9 +297,37 @@ export default function EditorClientPage({ initialDocumentId }) {
     window.setTimeout(restoreTitle, 1500);
   };
 
+  const handleExportDocx = async () => {
+    if (isExportingDocx) return;
+
+    setIsExportingDocx(true);
+    setErrorMessage("");
+
+    try {
+      const fileName = buildClearanceFileName(formData);
+      await exportClearanceDocx(formData || {}, fileName, {
+        photoSrc: photoSrc || "",
+        signatureSrc: signatureSrc || "",
+        logoLeftUrl: "/assets/supreme-court-seal-left.png",
+        logoRightUrl: "/assets/regional-trial-court-seal-right.png"
+      });
+      setStatusMessage("DOCX exported.");
+    } catch (error) {
+      setErrorMessage(error?.message || "Failed to export DOCX.");
+    } finally {
+      setIsExportingDocx(false);
+    }
+  };
+
   return (
     <main className="app-shell">
-      <HeaderBar onPrint={handlePrint} onSave={handleSaveDocument} isSaving={isSaving} />
+      <HeaderBar
+        onPrint={handlePrint}
+        onSave={handleSaveDocument}
+        isSaving={isSaving}
+        onExportDocx={handleExportDocx}
+        isExportingDocx={isExportingDocx}
+      />
       <div className={`${styles.statusBar} noPrint`}>
         {isLoadingDocument ? <span>Loading document...</span> : <span>{statusMessage}</span>}
         {errorMessage && <span className={styles.errorText}>{errorMessage}</span>}
