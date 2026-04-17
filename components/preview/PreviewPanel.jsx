@@ -143,6 +143,25 @@ function buildVerifiedBlock() {
 </div>`;
 }
 
+function buildFindingPurposeBlock(formData) {
+  const finding = escapeHtml(formData.finding || "NO CRIMINAL OR CIVIL CASE FILED OR PENDING");
+  const purpose = escapeHtml(formData.purpose || "LOCAL EMPLOYMENT");
+
+  return `
+<div class="rtc-fp-block">
+  <div class="rtc-fp-line rtc-fp-finding"><span class="rtc-fp-label">FINDING:</span><span class="rtc-fp-value">${finding}</span>.</div>
+  <div class="rtc-fp-line rtc-fp-purpose"><span class="rtc-fp-label">PURPOSE:</span><span class="rtc-fp-value">${purpose}</span></div>
+</div>`;
+}
+
+function replaceFindingPurposeBlock(content, formData) {
+  const findingPurposeRegex =
+    /<p class="c18"><span class="c12">[\s\S]*?FINDING:[\s\S]*?<\/p>\s*<p class="c18 c19">[\s\S]*?<\/p>\s*<p class="c8 c27"><span class="c12">PURPOSE:[\s\S]*?<\/p>/;
+
+  if (!findingPurposeRegex.test(content)) return content;
+  return content.replace(findingPurposeRegex, buildFindingPurposeBlock(formData || {}));
+}
+
 function replaceVerifiedBlock(content) {
   const verifiedBlockRegex =
     /<p class="c8 c17"><span class="c0">Verified by:<\/span><\/p>\s*<p class="c8"><span class="c0">[\s\S]*?Criminal Cases:[\s\S]*?_{5,}<\/span><\/p>\s*<p class="c8"><span class="c0">[\s\S]*?Civil Cases:[\s\S]*?_{5,}<\/span><\/p>/;
@@ -255,10 +274,30 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
         const headerFixCss = `
 <style id="rtc-header-fix">
+  @page {
+    size: 8.5in 13in;
+    margin: 0;
+  }
+
+  html,
+  body {
+    margin: 0;
+    padding: 0;
+  }
+
   body.doc-content {
     position: relative;
     padding-top: 20pt !important;
     padding-bottom: 18pt !important;
+    font-family: "Bookman Old Style", Bookman, "Times New Roman", serif !important;
+  }
+
+  body.doc-content *,
+  body.doc-content p,
+  body.doc-content span,
+  body.doc-content div,
+  body.doc-content td {
+    font-family: "Bookman Old Style", Bookman, "Times New Roman", serif !important;
   }
 
   body.doc-content > p {
@@ -361,6 +400,36 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   .doc-content > p.c8.c27 {
     margin-top: 3pt;
+  }
+
+  .rtc-fp-block {
+    margin: 8pt 0 0 50pt;
+    font-size: 12pt;
+    line-height: 1;
+  }
+
+  .rtc-fp-line {
+    display: block;
+  }
+
+  .rtc-fp-finding {
+    margin-top: 0;
+  }
+
+  .rtc-fp-purpose {
+    margin-top: 3pt;
+  }
+
+  .rtc-fp-label {
+    font-weight: 400;
+  }
+
+  .rtc-fp-value {
+    margin-left: 6pt;
+    font-weight: 700;
+    text-decoration: underline;
+    text-decoration-thickness: 1px;
+    text-underline-offset: 1px;
   }
 
   .rtc-verified-block {
@@ -605,7 +674,8 @@ export default function PreviewPanel({ formData, photoSrc }) {
     const withData = applyMinimalData(templateHtml, formData || {});
     const withHeader = replaceHeaderBlock(withData, formData || {});
     const withGivenLine = replaceGivenLine(withHeader, formData || {});
-    const withVerified = replaceVerifiedBlock(withGivenLine);
+    const withFindingPurpose = replaceFindingPurposeBlock(withGivenLine, formData || {});
+    const withVerified = replaceVerifiedBlock(withFindingPurpose);
     const withSignatory = replaceSignatoryBlock(withVerified, formData || {});
     return replaceBottomBlock(withSignatory, formData || {}, photoSrc || "");
   }, [templateHtml, formData, photoSrc]);
