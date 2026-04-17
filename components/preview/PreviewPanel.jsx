@@ -469,7 +469,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-verified-block {
-    margin: 7pt 0 0 180pt;
+    margin: 7pt 0 0 220pt;
     width: 245pt;
     font-family: var(--rtc-doc-font);
     font-size: 12pt;
@@ -548,7 +548,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-stamp-box {
-    width: 180pt;
+    width: 206pt;
     border: 2px solid #000;
     background: #fff;
     padding: 7pt 8pt;
@@ -557,9 +557,10 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-stamp-title {
-    font-size: 11pt;
+    font-size: 10.2pt;
     font-weight: 700;
     margin: 0;
+    white-space: nowrap;
   }
 
   .rtc-stamp-line {
