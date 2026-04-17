@@ -274,6 +274,42 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
         const headerFixCss = `
 <style id="rtc-header-fix">
+  @font-face {
+    font-family: "RTCClearanceBookman";
+    src: url('/fonts/bookmanoldstyle.ttf') format('truetype');
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+  }
+
+  @font-face {
+    font-family: "RTCClearanceBookman";
+    src: url('/fonts/bookmanoldstyle_bold.ttf') format('truetype');
+    font-weight: 700;
+    font-style: normal;
+    font-display: block;
+  }
+
+  @font-face {
+    font-family: "RTCClearanceBookman";
+    src: url('/fonts/bookmanoldstyle_italic.ttf') format('truetype');
+    font-weight: 400;
+    font-style: italic;
+    font-display: block;
+  }
+
+  @font-face {
+    font-family: "RTCClearanceBookman";
+    src: url('/fonts/bookmanoldstyle_bolditalic.ttf') format('truetype');
+    font-weight: 700;
+    font-style: italic;
+    font-display: block;
+  }
+
+  :root {
+    --rtc-doc-font: "RTCClearanceBookman", "Bookman Old Style", Bookman, "Times New Roman", serif;
+  }
+
   @page {
     size: 8.5in 13in;
     margin: 0;
@@ -289,7 +325,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
     position: relative;
     padding-top: 20pt !important;
     padding-bottom: 18pt !important;
-    font-family: "Bookman Old Style", Bookman, "Times New Roman", serif !important;
+    font-family: var(--rtc-doc-font) !important;
   }
 
   body.doc-content *,
@@ -297,7 +333,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   body.doc-content span,
   body.doc-content div,
   body.doc-content td {
-    font-family: "Bookman Old Style", Bookman, "Times New Roman", serif !important;
+    font-family: var(--rtc-doc-font) !important;
   }
 
   body.doc-content > p {
@@ -348,28 +384,28 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   .rtc-h-republic,
   .rtc-h-sub {
-    font-family: "Bookman Old Style";
+    font-family: var(--rtc-doc-font);
     font-size: 12pt;
     font-weight: 400;
     margin: 0;
   }
 
   .rtc-h-court {
-    font-family: "Bookman Old Style";
+    font-family: var(--rtc-doc-font);
     font-size: 12pt;
     font-weight: 700;
     margin: 0;
   }
 
   .rtc-h-meta {
-    font-family: "Bookman Old Style";
+    font-family: var(--rtc-doc-font);
     font-size: 10pt;
     font-weight: 400;
     margin: 0;
   }
 
   .rtc-ordinal-suffix {
-    font-family: "Bookman Old Style";
+    font-family: var(--rtc-doc-font);
     font-size: 7pt;
     font-weight: 700;
     vertical-align: super;
@@ -387,7 +423,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-ordinal-number {
-    font-family: "Bookman Old Style";
+    font-family: var(--rtc-doc-font);
     font-size: 12pt;
     font-weight: 700;
     line-height: 1;
@@ -435,7 +471,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   .rtc-verified-block {
     margin: 4pt 0 0 180pt;
     width: 245pt;
-    font-family: "Bookman Old Style";
+    font-family: var(--rtc-doc-font);
     font-size: 12pt;
     line-height: 1;
   }
@@ -470,7 +506,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
     margin: 7pt 0 0 auto;
     width: 290pt;
     text-align: center;
-    font-family: "Bookman Old Style";
+    font-family: var(--rtc-doc-font);
     line-height: 1.1;
     transform: translateX(34pt);
   }
@@ -501,7 +537,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   .rtc-bottom-wrap {
     margin-top: 12pt;
     margin-bottom: 24pt;
-    font-family: "Bookman Old Style";
+    font-family: var(--rtc-doc-font);
   }
 
   .rtc-stamp-assistant-row {
