@@ -323,7 +323,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   body.doc-content {
     position: relative;
-    padding-top: 20pt !important;
+    padding-top: 18pt !important;
     padding-bottom: 18pt !important;
     font-family: var(--rtc-doc-font) !important;
   }
@@ -337,7 +337,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   body.doc-content > p {
-    margin-bottom: 1.8pt;
+    margin-bottom: 3pt;
   }
 
   body.doc-content::before {
@@ -365,7 +365,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
     justify-content: center;
     gap: 12pt;
     margin: 0;
-    min-height: 72pt;
+    min-height: 76pt;
   }
 
   .rtc-header-logo {
@@ -378,8 +378,8 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   .rtc-header-center {
     text-align: center;
-    line-height: 1;
-    margin-top: 8pt;
+    line-height: 1.03;
+    margin-top: 10pt;
   }
 
   .rtc-h-republic,
@@ -431,17 +431,17 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   /* Slightly separate main paragraph block from FINDING/PURPOSE lines */
   .doc-content > p.c18:not(.c19):has(> span:first-child:not(.c22)) {
-    margin-top: 8pt;
+    margin-top: 11pt;
   }
 
   .doc-content > p.c8.c27 {
-    margin-top: 3pt;
+    margin-top: 5pt;
   }
 
   .rtc-fp-block {
-    margin: 8pt 0 0 50pt;
+    margin: 11pt 0 0 50pt;
     font-size: 12pt;
-    line-height: 1;
+    line-height: 1.08;
   }
 
   .rtc-fp-line {
@@ -453,7 +453,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-fp-purpose {
-    margin-top: 3pt;
+    margin-top: 5pt;
   }
 
   .rtc-fp-label {
@@ -469,17 +469,17 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-verified-block {
-    margin: 4pt 0 0 180pt;
+    margin: 7pt 0 0 180pt;
     width: 245pt;
     font-family: var(--rtc-doc-font);
     font-size: 12pt;
-    line-height: 1;
+    line-height: 1.08;
   }
 
   .rtc-verified-title {
     width: auto;
     text-align: left;
-    margin: 0 0 2pt 0;
+    margin: 0 0 3pt 0;
   }
 
   .rtc-verified-row {
@@ -503,11 +503,11 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-signatory-block {
-    margin: 7pt 0 0 auto;
+    margin: 11pt 0 0 auto;
     width: 290pt;
     text-align: center;
     font-family: var(--rtc-doc-font);
-    line-height: 1.1;
+    line-height: 1.12;
     transform: translateX(34pt);
   }
 
@@ -535,8 +535,8 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-bottom-wrap {
-    margin-top: 12pt;
-    margin-bottom: 24pt;
+    margin-top: 16pt;
+    margin-bottom: 28pt;
     font-family: var(--rtc-doc-font);
   }
 
@@ -544,14 +544,14 @@ export default function PreviewPanel({ formData, photoSrc }) {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
-    gap: 12pt;
+    gap: 14pt;
   }
 
   .rtc-stamp-box {
     width: 180pt;
     border: 2px solid #000;
     background: #fff;
-    padding: 6pt 8pt;
+    padding: 7pt 8pt;
     text-align: center;
     line-height: 1.14;
   }
@@ -564,14 +564,14 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   .rtc-stamp-line {
     font-size: 11pt;
-    margin-top: 2.5pt;
+    margin-top: 3.5pt;
   }
 
   .rtc-assistant-wrap {
     width: 165pt;
     text-align: center;
-    line-height: 1.05;
-    padding-top: 10pt;
+    line-height: 1.08;
+    padding-top: 12pt;
     transform: translateX(-32pt);
   }
 
@@ -589,7 +589,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
   }
 
   .rtc-dry-seal {
-    margin-top: 18pt;
+    margin-top: 20pt;
     font-size: 11pt;
     font-weight: 700;
     letter-spacing: 0;
@@ -602,20 +602,20 @@ export default function PreviewPanel({ formData, photoSrc }) {
     display: flex;
     align-items: flex-end;
     justify-content: flex-start;
-    gap: 12pt;
-    margin-top: 1pt;
+    gap: 14pt;
+    margin-top: 3pt;
   }
 
   .rtc-or-block {
     width: 190pt;
     font-size: 11pt;
-    line-height: 1.08;
+    line-height: 1.12;
   }
 
   .rtc-or-row {
     display: flex;
     align-items: baseline;
-    margin: 1.5pt 0;
+    margin: 2pt 0;
   }
 
   .rtc-or-label {
@@ -679,7 +679,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
     align-items: center;
     justify-content: center;
     font-size: 13pt;
-    line-height: 1.06;
+    line-height: 1.08;
     transform: translateX(var(--rtc-box-shift-x));
   }
 
