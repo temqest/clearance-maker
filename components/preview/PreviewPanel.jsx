@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import styles from "./PreviewPanel.module.css";
 
 const TEMPLATE_URL = "/assets/rtc-clearance-with-logo/RTCClearanceWithLogo.html";
+const FONT_FILES = {
+  regular: "/fonts/bookmanoldstyle.ttf",
+  bold: "/fonts/bookmanoldstyle_bold.ttf",
+  italic: "/fonts/bookmanoldstyle_italic.ttf",
+  boldItalic: "/fonts/bookmanoldstyle_bolditalic.ttf"
+};
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -14,6 +20,34 @@ function escapeHtml(value) {
 
 function replaceAllLiteral(content, searchValue, replacementValue) {
   return content.split(searchValue).join(replacementValue);
+}
+
+async function fetchAsDataUrl(url) {
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Failed to load font asset: ${url}`);
+  }
+
+  const mimeType = response.headers.get("content-type") || "font/ttf";
+  const bytes = new Uint8Array(await response.arrayBuffer());
+  let binary = "";
+
+  for (let index = 0; index < bytes.length; index += 0x8000) {
+    binary += String.fromCharCode(...bytes.subarray(index, index + 0x8000));
+  }
+
+  return `data:${mimeType};base64,${btoa(binary)}`;
+}
+
+async function loadBookmanFontSources() {
+  const [regular, bold, italic, boldItalic] = await Promise.all([
+    fetchAsDataUrl(FONT_FILES.regular),
+    fetchAsDataUrl(FONT_FILES.bold),
+    fetchAsDataUrl(FONT_FILES.italic),
+    fetchAsDataUrl(FONT_FILES.boldItalic)
+  ]);
+
+  return { regular, bold, italic, boldItalic };
 }
 
 function splitOrdinal(value) {
@@ -263,9 +297,8 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   useEffect(() => {
     let active = true;
-    fetch(TEMPLATE_URL)
-      .then((response) => response.text())
-      .then((rawTemplate) => {
+    Promise.all([fetch(TEMPLATE_URL).then((response) => response.text()), loadBookmanFontSources()])
+      .then(([rawTemplate, fontSources]) => {
         if (!active) return;
         const withAbsoluteImagePaths = rawTemplate.replaceAll(
           'src="images/',
@@ -276,7 +309,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
 <style id="rtc-header-fix">
   @font-face {
     font-family: "RTCClearanceBookman";
-    src: url('/fonts/bookmanoldstyle.ttf') format('truetype');
+    src: url('${fontSources.regular}') format('truetype');
     font-weight: 400;
     font-style: normal;
     font-display: block;
@@ -284,7 +317,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   @font-face {
     font-family: "RTCClearanceBookman";
-    src: url('/fonts/bookmanoldstyle_bold.ttf') format('truetype');
+    src: url('${fontSources.bold}') format('truetype');
     font-weight: 700;
     font-style: normal;
     font-display: block;
@@ -292,7 +325,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   @font-face {
     font-family: "RTCClearanceBookman";
-    src: url('/fonts/bookmanoldstyle_italic.ttf') format('truetype');
+    src: url('${fontSources.italic}') format('truetype');
     font-weight: 400;
     font-style: italic;
     font-display: block;
@@ -300,7 +333,7 @@ export default function PreviewPanel({ formData, photoSrc }) {
 
   @font-face {
     font-family: "RTCClearanceBookman";
-    src: url('/fonts/bookmanoldstyle_bolditalic.ttf') format('truetype');
+    src: url('${fontSources.boldItalic}') format('truetype');
     font-weight: 700;
     font-style: italic;
     font-display: block;
@@ -699,6 +732,10 @@ export default function PreviewPanel({ formData, photoSrc }) {
         );
 
         setTemplateHtml(withHeaderFixCss);
+      })
+      .catch((error) => {
+        if (!active) return;
+        console.error("Failed to load preview template or fonts:", error);
       });
 
     return () => {
