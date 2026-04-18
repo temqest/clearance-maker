@@ -154,12 +154,15 @@ function buildVerifiedBlock() {
 }
 
 function buildFindingPurposeBlock(formData) {
-  const finding = escapeHtml(formData.finding || "NO CRIMINAL OR CIVIL CASE FILED OR PENDING");
-  const purpose = escapeHtml(formData.purpose || "LOCAL EMPLOYMENT");
+  const findingRaw = String(formData.finding ?? "").trim();
+  const purposeRaw = String(formData.purpose ?? "").trim();
+  const finding = findingRaw ? escapeHtml(findingRaw) : "&nbsp;";
+  const purpose = purposeRaw ? escapeHtml(purposeRaw) : "&nbsp;";
+  const findingSuffix = findingRaw ? "." : "";
 
   return `
 <div class="rtc-fp-block">
-  <div class="rtc-fp-line rtc-fp-finding"><span class="rtc-fp-label">FINDING:</span><span class="rtc-fp-value">${finding}</span>.</div>
+  <div class="rtc-fp-line rtc-fp-finding"><span class="rtc-fp-label">FINDING:</span><span class="rtc-fp-value">${finding}</span>${findingSuffix}</div>
   <div class="rtc-fp-line rtc-fp-purpose"><span class="rtc-fp-label">PURPOSE:</span><span class="rtc-fp-value">${purpose}</span></div>
 </div>`;
 }
