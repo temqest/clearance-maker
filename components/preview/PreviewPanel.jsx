@@ -212,8 +212,8 @@ function fieldValueHtml(value) {
 }
 
 function buildBottomBlock(formData, photoSrc) {
-  const assistantName = escapeHtml(formData.assistantClerkName || "MARIBEL B. LLAGAS");
-  const assistantTitle = escapeHtml(formData.assistantClerkTitle || "Clerk of Court V");
+  const assistantName = escapeHtml(formData.assistantClerkName || "");
+  const assistantTitle = escapeHtml(formData.assistantClerkTitle || "");
   const stampOr = fieldValueHtml(formData.stampOR || formData.orNo);
   const stampDate = fieldValueHtml(formData.stampDate || formData.orDate || formData.issuedOn);
   const orNo = fieldValueHtml(formData.orNo);
