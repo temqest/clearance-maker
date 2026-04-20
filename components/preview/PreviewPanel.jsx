@@ -183,27 +183,33 @@ function replaceVerifiedBlock(content) {
   return content.replace(verifiedBlockRegex, buildVerifiedBlock());
 }
 
-function buildSignatoryBlock(formData) {
+function buildSignatoryBlock(formData, signatureSrc) {
   const clerkName = escapeHtml(formData.clerkName || "HARLETTE R. ARROYO-POTENCIO");
   const clerkTitle1 = escapeHtml(formData.clerkTitle1 || "Clerk of Court VI");
   const clerkTitle2 = escapeHtml(
     formData.clerkTitle2 || "Ex-Officio Provincial Sheriff & Notary Public"
   );
+  const clerkSignature = String(signatureSrc || "").trim();
+
+  const signatureTag = clerkSignature
+    ? `<div class="rtc-clerk-signature-slot"><img src="${escapeHtml(clerkSignature)}" alt="Clerk signature" class="rtc-clerk-signature-image" /></div>`
+    : "";
 
   return `
 <div class="rtc-signatory-block">
+  ${signatureTag}
   <div class="rtc-signatory-name">${clerkName}</div>
   <div class="rtc-signatory-title rtc-signatory-title-main">${clerkTitle1}</div>
   <div class="rtc-signatory-title rtc-signatory-title-secondary">${clerkTitle2}</div>
 </div>`;
 }
 
-function replaceSignatoryBlock(content, formData) {
+function replaceSignatoryBlock(content, formData, signatureSrc) {
   const signatoryBlockRegex =
     /<p class="c8 c28"><span class="c2">[\s\S]*?<\/span><\/p>\s*<p class="c8"><span class="c12">[\s\S]*?<\/span><span class="c10 c15">[\s\S]*?<\/span><\/p>\s*<p class="c8 c37"><span class="c10">[\s\S]*?<\/span><span class="c14">[\s\S]*?<\/span><\/p>/;
 
   if (!signatoryBlockRegex.test(content)) return content;
-  return content.replace(signatoryBlockRegex, buildSignatoryBlock(formData || {}));
+  return content.replace(signatoryBlockRegex, buildSignatoryBlock(formData || {}, signatureSrc));
 }
 
 function fieldValueHtml(value) {
@@ -271,7 +277,7 @@ function replaceBottomBlock(content, formData, photoSrc) {
   return content.replace(bottomBlockRegex, buildBottomBlock(formData || {}, photoSrc));
 }
 
-export default function PreviewPanel({ formData, photoSrc }) {
+export default function PreviewPanel({ formData, photoSrc, signatureSrc }) {
   const [templateHtml, setTemplateHtml] = useState("");
 
   useEffect(() => {
@@ -532,6 +538,23 @@ export default function PreviewPanel({ formData, photoSrc }) {
     transform: translateX(34pt);
   }
 
+  .rtc-clerk-signature-slot {
+    height: 46pt;
+    display: flex;
+    justify-content: center;
+    align-items: flex-end;
+    margin: 0 0 -8pt;
+    pointer-events: none;
+  }
+
+  .rtc-clerk-signature-image {
+    max-width: 156pt;
+    max-height: 52pt;
+    width: auto;
+    height: auto;
+    object-fit: contain;
+  }
+
   .rtc-signatory-name {
     margin: 0;
     font-size: 12pt;
@@ -738,9 +761,9 @@ export default function PreviewPanel({ formData, photoSrc }) {
     const withGivenLine = replaceGivenLine(withHeader, formData || {});
     const withFindingPurpose = replaceFindingPurposeBlock(withGivenLine, formData || {});
     const withVerified = replaceVerifiedBlock(withFindingPurpose);
-    const withSignatory = replaceSignatoryBlock(withVerified, formData || {});
+    const withSignatory = replaceSignatoryBlock(withVerified, formData || {}, signatureSrc || "");
     return replaceBottomBlock(withSignatory, formData || {}, photoSrc || "");
-  }, [templateHtml, formData, photoSrc]);
+  }, [templateHtml, formData, photoSrc, signatureSrc]);
 
   return (
     <section className={styles.previewPanel}>

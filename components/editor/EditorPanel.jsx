@@ -4,6 +4,8 @@ import { fileToWordSafeDataUrl } from "lib/imageDataUrl";
 import PhotoUpload from "./PhotoUpload";
 import styles from "./EditorPanel.module.css";
 
+const SIGNATURE_UPLOAD_ENABLED = false;
+
 export default function EditorPanel({
   formData,
   onFieldChange,
@@ -87,7 +89,11 @@ export default function EditorPanel({
                 onChange={handleSignatureLoad}
                 className={styles.fileUploadInput}
                 ref={signatureInputRef}
+                disabled={!SIGNATURE_UPLOAD_ENABLED}
               />
+              {!SIGNATURE_UPLOAD_ENABLED && (
+                <div className={styles.uploadedTag}>Signature upload is temporarily disabled.</div>
+              )}
               {signatureSrc && (
                 <div className={styles.actionRow}>
                   <div className={styles.uploadedTag}>Signature added to clerk area.</div>
