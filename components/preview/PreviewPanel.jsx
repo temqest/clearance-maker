@@ -361,8 +361,6 @@ export default function PreviewPanel({
     padding-top: 18pt !important;
     padding-bottom: 18pt !important;
     font-family: var(--rtc-doc-font) !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
   }
 
   body.doc-content *,
