@@ -310,8 +310,9 @@ export default function EditorClientPage({ initialDocumentId }) {
 
       const fileName = buildClearanceFileName(formData);
       const printableHtml = await inlineStableAssetsForPrint(renderedPreviewHtml);
-      await printHtmlDocument(printableHtml, fileName);
-      setStatusMessage("PDF export with assets started.");
+      const pdfBlob = await exportPdfViaServer(printableHtml, fileName);
+      downloadPdfBlob(pdfBlob, fileName);
+      setStatusMessage("PDF export complete.");
     } catch (error) {
       setErrorMessage(error?.message || "Failed to export PDF.");
     } finally {
@@ -402,6 +403,44 @@ export default function EditorClientPage({ initialDocumentId }) {
     }
 
     return "";
+  };
+
+  const downloadPdfBlob = (blob, fileName) => {
+    const safeBaseName =
+      String(fileName || "RTC_CLEARANCE")
+        .trim()
+        .replace(/[\\/:*?"<>|]+/g, "_")
+        .replace(/\s+/g, "_")
+        .replace(/^_+|_+$/g, "") || "RTC_CLEARANCE";
+
+    const objectUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = objectUrl;
+    anchor.download = `${safeBaseName}.pdf`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    URL.revokeObjectURL(objectUrl);
+  };
+
+  const exportPdfViaServer = async (html, fileName) => {
+    const response = await fetch(
+      `/api/export-pdf?fileName=${encodeURIComponent(fileName || "RTC_CLEARANCE")}`,
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "text/html;charset=utf-8"
+        },
+        body: html
+      }
+    );
+
+    if (!response.ok) {
+      const message = await response.text();
+      throw new Error(message || "Server-side PDF export failed.");
+    }
+
+    return response.blob();
   };
 
   const inlineStableAssetsForPrint = async (rawHtml) => {
