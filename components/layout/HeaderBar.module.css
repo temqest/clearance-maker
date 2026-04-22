@@ -118,6 +118,27 @@
   border-color: #b63340;
 }
 
+.pdfNoLogoButton {
+  background: #0b7a75;
+  color: var(--white);
+  border: 1px solid #0b7a75;
+  padding: 7px 14px;
+  border-radius: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  font-weight: 600;
+}
+
+.pdfNoLogoButton:hover {
+  background: #08645f;
+  border-color: #08645f;
+}
+
+.pdfNoLogoButton:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
 @media (max-width: 860px) {
   .header {
     flex-wrap: wrap;

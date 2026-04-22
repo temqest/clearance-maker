@@ -12,6 +12,13 @@ import { buildClearanceFileName } from "lib/printFileName";
 import { createSupabaseBrowserClient } from "lib/supabase/client";
 import styles from "./page.module.css";
 
+const PRINT_RESOURCE_TIMEOUT_MS = 8000;
+const IMAGE_FETCH_RETRY_COUNT = 2;
+const IMAGE_FETCH_RETRY_DELAY_MS = 250;
+const FRAME_SINGLE_IMAGE_TIMEOUT_MS = 5000;
+const LEGACY_COURT_EMAIL = "rtc1iriocca@judiciary.gov.ph";
+const DEFAULT_COURT_EMAIL = "rtc1iriocc@judiciary.gov.ph";
+
 export default function EditorClientPage({ initialDocumentId }) {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
@@ -29,8 +36,17 @@ export default function EditorClientPage({ initialDocumentId }) {
   const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isExportingDocx, setIsExportingDocx] = useState(false);
+  const [isExportingPdf, setIsExportingPdf] = useState(false);
+  const [isExportingPdfNoLogo, setIsExportingPdfNoLogo] = useState(false);
+  const [renderedPreviewHtml, setRenderedPreviewHtml] = useState("");
   const [statusMessage, setStatusMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
+
+  const normalizeCourtEmail = (value) => {
+    const text = String(value || "").trim();
+    if (!text) return "";
+    return text.toLowerCase() === LEGACY_COURT_EMAIL ? DEFAULT_COURT_EMAIL : text;
+  };
 
   const resetToNewDocument = () => {
     setFormData(defaultClearanceData);
@@ -83,7 +99,10 @@ export default function EditorClientPage({ initialDocumentId }) {
       loadStoredImage(data.signature_path)
     ]);
 
-    setFormData({ ...defaultClearanceData, ...(data.form_data || {}) });
+    const nextFormData = { ...defaultClearanceData, ...(data.form_data || {}) };
+    nextFormData.courtEmail = normalizeCourtEmail(nextFormData.courtEmail);
+
+    setFormData(nextFormData);
     setPhotoPath(data.photo_path || "");
     setSignaturePath(data.signature_path || "");
     setPhotoSrc(loadedPhotoSrc);
@@ -278,23 +297,26 @@ export default function EditorClientPage({ initialDocumentId }) {
     }
   };
 
-  const handlePrint = () => {
-    const previousTitle = document.title;
-    const nextTitle = buildClearanceFileName(formData);
-    let restored = false;
+  const handlePrint = async () => {
+    if (isExportingPdf) return;
 
-    const restoreTitle = () => {
-      if (restored) return;
-      restored = true;
-      document.title = previousTitle;
-      window.removeEventListener("afterprint", restoreTitle);
-    };
+    setIsExportingPdf(true);
+    setErrorMessage("");
 
-    document.title = nextTitle;
-    window.addEventListener("afterprint", restoreTitle);
-    window.print();
+    try {
+      if (!renderedPreviewHtml) {
+        throw new Error("Preview is still loading. Please try again.");
+      }
 
-    window.setTimeout(restoreTitle, 1500);
+      const fileName = buildClearanceFileName(formData);
+      const printableHtml = await inlineStableAssetsForPrint(renderedPreviewHtml);
+      await printHtmlDocument(printableHtml, fileName);
+      setStatusMessage("PDF export with assets started.");
+    } catch (error) {
+      setErrorMessage(error?.message || "Failed to export PDF.");
+    } finally {
+      setIsExportingPdf(false);
+    }
   };
 
   const handleExportDocx = async () => {
@@ -319,14 +341,345 @@ export default function EditorClientPage({ initialDocumentId }) {
     }
   };
 
+  const sleep = (ms) => new Promise((resolve) => window.setTimeout(resolve, ms));
+
+  const withTimeout = (promise, timeoutMs, timeoutLabel) =>
+    Promise.race([
+      promise,
+      new Promise((_, reject) => {
+        window.setTimeout(() => {
+          reject(new Error(timeoutLabel));
+        }, timeoutMs);
+      })
+    ]);
+
+  const getAbsoluteAssetUrl = (src) => {
+    try {
+      return new URL(src, window.location.origin).toString();
+    } catch {
+      return "";
+    }
+  };
+
+  const shouldInlineImageSource = (src) => {
+    const value = String(src || "").trim();
+    if (!value) return false;
+    if (value.startsWith("data:")) return false;
+    if (value.startsWith("blob:")) return false;
+
+    const normalized = value.toLowerCase();
+    if (normalized.startsWith("/assets/")) return true;
+    if (normalized.startsWith("assets/")) return true;
+
+    if (normalized.startsWith("http://") || normalized.startsWith("https://")) {
+      return normalized.startsWith(window.location.origin.toLowerCase());
+    }
+
+    return false;
+  };
+
+  const fetchAssetAsDataUrl = async (src) => {
+    const absoluteUrl = getAbsoluteAssetUrl(src);
+    if (!absoluteUrl) return "";
+
+    for (let attempt = 0; attempt <= IMAGE_FETCH_RETRY_COUNT; attempt += 1) {
+      try {
+        const response = await fetch(absoluteUrl, { cache: "force-cache" });
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}`);
+        }
+
+        const blob = await response.blob();
+        return await blobToDataUrl(blob);
+      } catch (error) {
+        const isLastAttempt = attempt >= IMAGE_FETCH_RETRY_COUNT;
+        if (isLastAttempt) {
+          console.warn("[PDF export] Failed to inline image asset:", absoluteUrl, error);
+          return "";
+        }
+        await sleep(IMAGE_FETCH_RETRY_DELAY_MS * (attempt + 1));
+      }
+    }
+
+    return "";
+  };
+
+  const inlineStableAssetsForPrint = async (rawHtml) => {
+    if (!rawHtml) return "";
+
+    const parser = new DOMParser();
+    const documentForExport = parser.parseFromString(rawHtml, "text/html");
+    const imageElements = Array.from(documentForExport.querySelectorAll("img[src]"));
+    const cssUrlRegex = /url\((['"]?)([^'"\)]+)\1\)/g;
+    const styleElements = Array.from(documentForExport.querySelectorAll("style"));
+
+    const imageSources = imageElements
+      .map((img) => String(img.getAttribute("src") || "").trim())
+      .filter((src) => shouldInlineImageSource(src));
+
+    const cssSources = [];
+    for (const style of styleElements) {
+      const cssText = String(style.textContent || "");
+      if (!cssText.includes("url(")) continue;
+
+      let match;
+      while ((match = cssUrlRegex.exec(cssText)) !== null) {
+        const source = String(match[2] || "").trim();
+        if (shouldInlineImageSource(source)) {
+          cssSources.push(source);
+        }
+      }
+      cssUrlRegex.lastIndex = 0;
+    }
+
+    const uniqueSources = [...new Set([...imageSources, ...cssSources])];
+
+    const sourceMap = new Map();
+
+    await Promise.all(
+      uniqueSources.map(async (src) => {
+        const dataUrl = await fetchAssetAsDataUrl(src);
+        if (dataUrl) {
+          sourceMap.set(src, dataUrl);
+          sourceMap.set(getAbsoluteAssetUrl(src), dataUrl);
+        }
+      })
+    );
+
+    for (const img of imageElements) {
+      const src = String(img.getAttribute("src") || "").trim();
+      const absoluteSrc = getAbsoluteAssetUrl(src);
+      const inlined = sourceMap.get(src) || sourceMap.get(absoluteSrc);
+      if (inlined) {
+        img.setAttribute("src", inlined);
+      } else if (shouldInlineImageSource(src)) {
+        console.warn("[PDF export] Image not inlined; keeping original source:", src);
+      }
+    }
+
+    for (const style of styleElements) {
+      const cssText = String(style.textContent || "");
+      if (!cssText.includes("url(")) continue;
+
+      let nextCssText = cssText;
+      let match;
+      while ((match = cssUrlRegex.exec(cssText)) !== null) {
+        const originalRef = String(match[2] || "").trim();
+        if (!shouldInlineImageSource(originalRef)) continue;
+        const absoluteRef = getAbsoluteAssetUrl(originalRef);
+        const inlined = sourceMap.get(originalRef) || sourceMap.get(absoluteRef);
+        if (inlined) {
+          nextCssText = nextCssText.replace(match[0], `url('${inlined}')`);
+        } else {
+          console.warn("[PDF export] CSS image not inlined; keeping original source:", originalRef);
+        }
+      }
+
+      style.textContent = nextCssText;
+      cssUrlRegex.lastIndex = 0;
+    }
+
+    return documentForExport.documentElement.outerHTML;
+  };
+
+  const buildNoAssetsPrintHtml = (rawHtml) => {
+    if (!rawHtml) return "";
+
+    const parser = new DOMParser();
+    const documentForExport = parser.parseFromString(rawHtml, "text/html");
+
+    // Remove only official logo assets; keep applicant photo/signature images intact.
+    const logoImages = Array.from(documentForExport.querySelectorAll(
+      "img.rtc-header-logo, img[src*='supreme-court-seal-left'], img[src*='regional-trial-court-seal-right'], img[src*='supreme-court-seal.png']"
+    ));
+
+    for (const img of logoImages) {
+      img.remove();
+    }
+
+    const styleElements = Array.from(documentForExport.querySelectorAll("style"));
+    for (const style of styleElements) {
+      const cssText = String(style.textContent || "");
+      const withoutWatermark = cssText.replace(
+        /body\.doc-content::before\s*\{[\s\S]*?\}/g,
+        `body.doc-content::before {
+    content: none !important;
+    display: none !important;
+    background: none !important;
+  }`
+      );
+      style.textContent = withoutWatermark;
+    }
+
+    return documentForExport.documentElement.outerHTML;
+  };
+
+  const waitForFrameImages = async (frameDocument) => {
+    const images = Array.from(frameDocument.images || []);
+    if (!images.length) return;
+
+    await Promise.all(
+      images.map(async (img) => {
+        const source = String(img.currentSrc || img.src || "").trim();
+        if (!source || source === "about:blank") {
+          return;
+        }
+
+        if (img.complete) {
+          if (img.naturalWidth === 0) {
+            console.warn("[PDF export] Image failed to decode in print frame:", source);
+          }
+          return;
+        }
+
+        try {
+          if (typeof img.decode === "function") {
+            await withTimeout(
+              img.decode(),
+              FRAME_SINGLE_IMAGE_TIMEOUT_MS,
+              "Timed out waiting for image decode."
+            );
+            if (img.naturalWidth > 0) return;
+          }
+        } catch {
+          // Fall through to load/error listener path.
+        }
+
+        await withTimeout(
+          new Promise((resolve) => {
+            const done = () => resolve();
+            img.addEventListener("load", done, { once: true });
+            img.addEventListener("error", done, { once: true });
+          }),
+          FRAME_SINGLE_IMAGE_TIMEOUT_MS,
+          "Timed out waiting for image load event."
+        ).catch(() => {
+          // Per-image timeout is non-fatal; final check below logs actual state.
+        });
+
+        if (img.naturalWidth === 0) {
+          console.warn("[PDF export] Image failed to decode in print frame:", source);
+        }
+      })
+    );
+  };
+
+  const waitForFrameReady = async (frameDocument) => {
+    if (frameDocument?.fonts?.ready) {
+      try {
+        await withTimeout(
+          frameDocument.fonts.ready,
+          PRINT_RESOURCE_TIMEOUT_MS,
+          "Timed out waiting for print fonts."
+        );
+      } catch (error) {
+        console.warn("[PDF export] Font readiness warning:", error);
+      }
+    }
+
+    await withTimeout(
+      waitForFrameImages(frameDocument),
+      PRINT_RESOURCE_TIMEOUT_MS,
+      "Timed out waiting for print images."
+    ).catch((error) => {
+      console.warn("[PDF export] Image readiness warning:", error);
+    });
+  };
+
+  const printHtmlDocument = async (html, title) => {
+    const previousTitle = document.title;
+    let restored = false;
+
+    const restoreTitle = () => {
+      if (restored) return;
+      restored = true;
+      document.title = previousTitle;
+      window.removeEventListener("afterprint", restoreTitle);
+    };
+
+    document.title = title;
+    window.addEventListener("afterprint", restoreTitle);
+
+    const frame = document.createElement("iframe");
+    frame.setAttribute("aria-hidden", "true");
+    frame.style.position = "fixed";
+    frame.style.right = "-10000px";
+    frame.style.bottom = "-10000px";
+    frame.style.width = "0";
+    frame.style.height = "0";
+    frame.style.border = "0";
+
+    document.body.appendChild(frame);
+
+    const frameWindow = frame.contentWindow;
+    const frameDocument = frame.contentDocument || frameWindow?.document;
+    if (!frameWindow || !frameDocument) {
+      document.body.removeChild(frame);
+      restoreTitle();
+      throw new Error("Unable to open print frame.");
+    }
+
+    frameDocument.open();
+    frameDocument.write(html);
+    frameDocument.close();
+
+    const cleanup = () => {
+      window.setTimeout(() => {
+        if (document.body.contains(frame)) {
+          document.body.removeChild(frame);
+        }
+        restoreTitle();
+      }, 500);
+    };
+
+    const triggerPrint = () => {
+      frameDocument.title = title;
+      frameWindow.focus();
+      frameWindow.print();
+      cleanup();
+    };
+
+    frameWindow.addEventListener("afterprint", cleanup, { once: true });
+    await waitForFrameReady(frameDocument);
+    triggerPrint();
+
+    window.setTimeout(restoreTitle, 1500);
+  };
+
+  const handleExportPdfNoLogo = async () => {
+    if (isExportingPdfNoLogo) return;
+
+    setIsExportingPdfNoLogo(true);
+    setErrorMessage("");
+
+    try {
+      if (!renderedPreviewHtml) {
+        throw new Error("Preview is still loading. Please try again.");
+      }
+
+      const fileName = buildClearanceFileName(formData);
+      const printableHtml = buildNoAssetsPrintHtml(renderedPreviewHtml);
+      await printHtmlDocument(printableHtml, fileName);
+      setStatusMessage("PDF export without logo/watermark started.");
+    } catch (error) {
+      setErrorMessage(error?.message || "Failed to export PDF.");
+    } finally {
+      setIsExportingPdfNoLogo(false);
+    }
+  };
+
   return (
     <main className="app-shell">
       <HeaderBar
         onPrint={handlePrint}
+        isExportingPdf={isExportingPdf}
         onSave={handleSaveDocument}
         isSaving={isSaving}
         onExportDocx={handleExportDocx}
         isExportingDocx={isExportingDocx}
+        hideExportDocx
+        onExportPdfNoLogo={handleExportPdfNoLogo}
+        isExportingPdfNoLogo={isExportingPdfNoLogo}
       />
       <div className={`${styles.statusBar} noPrint`}>
         {isLoadingDocument ? <span>Loading document...</span> : <span>{statusMessage}</span>}
@@ -343,7 +696,12 @@ export default function EditorClientPage({ initialDocumentId }) {
           onSignatureChange={handleSignatureChange}
           onSignatureRemove={handleSignatureRemove}
         />
-        <PreviewPanel formData={formData} photoSrc={photoSrc} signatureSrc={signatureSrc} />
+        <PreviewPanel
+          formData={formData}
+          photoSrc={photoSrc}
+          signatureSrc={signatureSrc}
+          onRenderedTemplateChange={setRenderedPreviewHtml}
+        />
       </div>
     </main>
   );

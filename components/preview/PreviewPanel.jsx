@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import styles from "./PreviewPanel.module.css";
 
 const TEMPLATE_URL = "/assets/rtc-clearance-with-logo/RTCClearanceWithLogo.html";
@@ -12,6 +12,7 @@ const FONT_FILES = {
   boldItalicWoff2: "/fonts/BookmanOldStyle-BoldItalic.woff2",
   boldItalicWoff: "/fonts/BookmanOldStyle-BoldItalic.woff"
 };
+const PREVIEW_DEBOUNCE_MS = 220;
 
 function escapeHtml(value) {
   return String(value ?? "")
@@ -91,7 +92,8 @@ function buildHeaderBlock(formData) {
   const courtName = escapeHtml(formData.courtName || "REGIONAL TRIAL COURT");
   const judicialRegion = escapeHtml(formData.judicialRegion || "5th Judicial Region");
   const courtCity = escapeHtml(formData.courtCity || "Iriga City");
-  const courtEmail = escapeHtml(formData.courtEmail || "rtc1iriocc@judiciary.gov.ph");
+  const normalizedCourtEmail = String(formData.courtEmail || "rtc1iriocc@judiciary.gov.ph").trim();
+  const courtEmail = escapeHtml(normalizedCourtEmail);
   const courtTel = escapeHtml(formData.courtTel || "(054) 299-5922");
 
   return `
@@ -277,8 +279,14 @@ function replaceBottomBlock(content, formData, photoSrc) {
   return content.replace(bottomBlockRegex, buildBottomBlock(formData || {}, photoSrc));
 }
 
-export default function PreviewPanel({ formData, photoSrc, signatureSrc }) {
+export default function PreviewPanel({
+  formData,
+  photoSrc,
+  signatureSrc,
+  onRenderedTemplateChange
+}) {
   const [templateHtml, setTemplateHtml] = useState("");
+  const [renderedTemplate, setRenderedTemplate] = useState("");
 
   useEffect(() => {
     let active = true;
@@ -754,16 +762,32 @@ export default function PreviewPanel({ formData, photoSrc, signatureSrc }) {
     };
   }, []);
 
-  const renderedTemplate = useMemo(() => {
-    if (!templateHtml) return "";
-    const withData = applyMinimalData(templateHtml, formData || {});
-    const withHeader = replaceHeaderBlock(withData, formData || {});
-    const withGivenLine = replaceGivenLine(withHeader, formData || {});
-    const withFindingPurpose = replaceFindingPurposeBlock(withGivenLine, formData || {});
-    const withVerified = replaceVerifiedBlock(withFindingPurpose);
-    const withSignatory = replaceSignatoryBlock(withVerified, formData || {}, signatureSrc || "");
-    return replaceBottomBlock(withSignatory, formData || {}, photoSrc || "");
+  useEffect(() => {
+    if (!templateHtml) {
+      setRenderedTemplate("");
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      const withData = applyMinimalData(templateHtml, formData || {});
+      const withHeader = replaceHeaderBlock(withData, formData || {});
+      const withGivenLine = replaceGivenLine(withHeader, formData || {});
+      const withFindingPurpose = replaceFindingPurposeBlock(withGivenLine, formData || {});
+      const withVerified = replaceVerifiedBlock(withFindingPurpose);
+      const withSignatory = replaceSignatoryBlock(withVerified, formData || {}, signatureSrc || "");
+      setRenderedTemplate(replaceBottomBlock(withSignatory, formData || {}, photoSrc || ""));
+    }, PREVIEW_DEBOUNCE_MS);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
   }, [templateHtml, formData, photoSrc, signatureSrc]);
+
+  useEffect(() => {
+    if (typeof onRenderedTemplateChange === "function") {
+      onRenderedTemplateChange(renderedTemplate || "");
+    }
+  }, [renderedTemplate, onRenderedTemplateChange]);
 
   return (
     <section className={styles.previewPanel}>

@@ -1,7 +1,17 @@
 import Link from "next/link";
 import styles from "./HeaderBar.module.css";
 
-export default function HeaderBar({ onPrint, onSave, isSaving, onExportDocx, isExportingDocx }) {
+export default function HeaderBar({
+  onPrint,
+  isExportingPdf,
+  onSave,
+  isSaving,
+  onExportDocx,
+  isExportingDocx,
+  hideExportDocx = false,
+  onExportPdfNoLogo,
+  isExportingPdfNoLogo
+}) {
   const handlePrint = () => {
     if (typeof onPrint === "function") {
       onPrint();
@@ -35,12 +45,24 @@ export default function HeaderBar({ onPrint, onSave, isSaving, onExportDocx, isE
             className={styles.exportDocxButton}
             onClick={onExportDocx}
             disabled={isExportingDocx}
+            hidden={hideExportDocx}
+            aria-hidden={hideExportDocx}
           >
             {isExportingDocx ? "Exporting DOCX..." : "Export DOCX"}
           </button>
         )}
-        <button type="button" className={styles.pdfButton} onClick={handlePrint}>
-          Print / Save PDF
+        {typeof onExportPdfNoLogo === "function" && (
+          <button
+            type="button"
+            className={styles.pdfNoLogoButton}
+            onClick={onExportPdfNoLogo}
+            disabled={isExportingPdfNoLogo}
+          >
+            {isExportingPdfNoLogo ? "Exporting PDF..." : "Export PDF w/out Logo"}
+          </button>
+        )}
+        <button type="button" className={styles.pdfButton} onClick={handlePrint} disabled={isExportingPdf}>
+          {isExportingPdf ? "Exporting PDF..." : "Export PDF"}
         </button>
       </div>
     </header>
