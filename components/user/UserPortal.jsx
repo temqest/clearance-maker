@@ -178,140 +178,158 @@ export default function UserPortal() {
   const [isPreviewingDoc, setIsPreviewingDoc] = useState(false);
 
   // Download handlers for Step 4 (QR Pass & Clearance Document in PNG/PDF)
-  const handleDownloadQrPng = (doc) => {
-    const svgElement = document.getElementById("clearance-qr-svg");
-    if (!svgElement) return;
+  const handleDownloadQrPng = async (doc) => {
+    try {
+      const qrDataUrl = realQrUrl || (await generateQrDataUrl(doc.id || "CLR-2026", { width: 400 }));
+      if (!qrDataUrl) return;
 
-    const svgString = new XMLSerializer().serializeToString(svgElement);
-    const svgBlob = new Blob([svgString], { type: "image/svg+xml;charset=utf-8" });
-    const URL = window.URL || window.webkitURL || window;
-    const blobURL = URL.createObjectURL(svgBlob);
+      const image = new Image();
+      image.crossOrigin = "anonymous";
+      image.onload = () => {
+        const canvas = document.createElement("canvas");
+        canvas.width = 500;
+        canvas.height = 620;
+        const ctx = canvas.getContext("2d");
 
-    const image = new Image();
-    image.onload = () => {
-      const canvas = document.createElement("canvas");
-      canvas.width = 500;
-      canvas.height = 600;
-      const ctx = canvas.getContext("2d");
+        // White background
+        ctx.fillStyle = "#FFFFFF";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-      ctx.fillStyle = "#FFFFFF";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+        // Header Title
+        ctx.fillStyle = "#09090B";
+        ctx.font = "bold 20px sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText("DIGITAL COUNTER QR PASS", 250, 45);
 
-      ctx.fillStyle = "#09090B";
-      ctx.font = "bold 20px sans-serif";
-      ctx.textAlign = "center";
-      ctx.fillText("DIGITAL COUNTER QR PASS", 250, 45);
+        ctx.fillStyle = "#71717A";
+        ctx.font = "13px sans-serif";
+        ctx.fillText("Regional Trial Court Clearance Portal", 250, 68);
 
-      ctx.fillStyle = "#71717A";
-      ctx.font = "13px sans-serif";
-      ctx.fillText("Regional Trial Court Clearance Portal", 250, 68);
+        // Draw real QR Code image
+        ctx.drawImage(image, 100, 90, 300, 300);
 
-      ctx.drawImage(image, 100, 90, 300, 300);
+        // Ref ID Box
+        ctx.fillStyle = "#FAF9F6";
+        ctx.strokeStyle = "#E4E4E7";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        if (ctx.roundRect) {
+          ctx.roundRect(80, 410, 340, 50, 12);
+        } else {
+          ctx.rect(80, 410, 340, 50);
+        }
+        ctx.fill();
+        ctx.stroke();
 
-      ctx.fillStyle = "#FAF9F6";
-      ctx.strokeStyle = "#E4E4E7";
-      ctx.lineWidth = 1;
-      ctx.beginPath();
-      if (ctx.roundRect) {
-        ctx.roundRect(80, 410, 340, 50, 10);
-      } else {
-        ctx.rect(80, 410, 340, 50);
-      }
-      ctx.fill();
-      ctx.stroke();
+        ctx.fillStyle = "#09090B";
+        ctx.font = "bold 22px monospace";
+        ctx.fillText(doc.id || "CLR-2026-0001", 250, 442);
 
-      ctx.fillStyle = "#09090B";
-      ctx.font = "bold 22px monospace";
-      ctx.fillText(doc.id || "CLR-2026-0001", 250, 442);
+        // Applicant Details
+        ctx.fillStyle = "#09090B";
+        ctx.font = "bold 16px sans-serif";
+        ctx.fillText(doc.fullName || "APPLICANT NAME", 250, 495);
 
-      ctx.fillStyle = "#09090B";
-      ctx.font = "bold 15px sans-serif";
-      ctx.fillText(doc.fullName || "APPLICANT NAME", 250, 495);
+        ctx.fillStyle = "#52525B";
+        ctx.font = "13px sans-serif";
+        ctx.fillText(`${doc.documentType || "Clearance Pass"} | ${doc.purpose || "Official Purpose"}`, 250, 520);
+        ctx.fillText(`Payment Ref: ${doc.paymentNo || "PAY-2026"}`, 250, 545);
+        ctx.fillText(`Date: ${doc.dateRequested || new Date().toLocaleDateString()}`, 250, 570);
 
-      ctx.fillStyle = "#52525B";
-      ctx.font = "13px sans-serif";
-      ctx.fillText(`${doc.documentType || "Clearance Pass"} | ${doc.purpose || "Official Purpose"}`, 250, 520);
-      ctx.fillText(`Payment Ref: ${doc.paymentNo || "PAY-2026"}`, 250, 545);
-
-      URL.revokeObjectURL(blobURL);
-
-      const pngData = canvas.toDataURL("image/png");
-      const downloadLink = document.createElement("a");
-      downloadLink.href = pngData;
-      downloadLink.download = `${(doc.fullName || "Clearance").replace(/[^a-zA-Z0-9]/g, "_")}_QR_Pass.png`;
-      document.body.appendChild(downloadLink);
-      downloadLink.click();
-      document.body.removeChild(downloadLink);
-    };
-    image.src = blobURL;
+        const pngData = canvas.toDataURL("image/png");
+        const downloadLink = document.createElement("a");
+        downloadLink.href = pngData;
+        downloadLink.download = `${(doc.fullName || "Clearance").replace(/[^a-zA-Z0-9]/g, "_")}_QR_Pass.png`;
+        document.body.appendChild(downloadLink);
+        downloadLink.click();
+        document.body.removeChild(downloadLink);
+      };
+      image.src = qrDataUrl;
+    } catch (err) {
+      console.error("Failed to generate QR Pass PNG", err);
+    }
   };
 
-  const handleDownloadQrPdf = (doc) => {
-    const qrSvg = document.getElementById("clearance-qr-svg")?.outerHTML || "";
-    const htmlContent = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <title>QR Pass - ${doc.id || "Clearance"}</title>
-          <style>
-            @page { size: A4 portrait; margin: 20mm; }
-            body { font-family: system-ui, -apple-system, sans-serif; text-align: center; color: #09090B; padding: 30px; background: #ffffff; }
-            .card { border: 2px solid #09090B; border-radius: 20px; padding: 40px; max-width: 440px; margin: 0 auto; background: #fff; }
-            .badge { display: inline-block; background: #09090B; color: #fff; font-size: 11px; font-weight: 800; padding: 6px 16px; border-radius: 99px; text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.05em; }
-            h2 { margin: 0 0 6px; font-size: 22px; }
-            p { color: #52525B; font-size: 13px; margin: 0 0 24px; }
-            .qr-box { background: #FAF9F6; border: 1px solid #E4E4E7; border-radius: 16px; padding: 24px; display: inline-block; margin-bottom: 24px; }
-            .ref-id { font-family: monospace; font-size: 24px; font-weight: 800; margin-top: 14px; letter-spacing: 0.05em; }
-            .details { text-align: left; background: #FAF9F6; border: 1px solid #E4E4E7; padding: 18px; border-radius: 14px; font-size: 13px; line-height: 1.7; }
-            .details-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
-            .details-label { color: #71717A; font-weight: 600; }
-            .details-val { color: #09090B; font-weight: 700; }
-          </style>
-        </head>
-        <body>
-          <div class="card">
-            <div class="badge">Digital Counter QR Pass</div>
-            <h2>Regional Trial Court Clearance Pass</h2>
-            <p>Present this QR pass code at Counter 3 for fast-track clearance certificate printing.</p>
-            <div class="qr-box">
-              ${qrSvg}
-              <div class="ref-id">${doc.id || "CLR-2026-0001"}</div>
+  const handleDownloadQrPdf = async (doc) => {
+    try {
+      const qrDataUrl = realQrUrl || (await generateQrDataUrl(doc.id || "CLR-2026", { width: 400 }));
+      const htmlContent = `
+        <!DOCTYPE html>
+        <html>
+          <head>
+            <title>QR Pass - ${doc.id || "Clearance"}</title>
+            <style>
+              @page { size: A4 portrait; margin: 20mm; }
+              body { font-family: system-ui, -apple-system, sans-serif; text-align: center; color: #09090B; padding: 30px; background: #ffffff; }
+              .card { border: 2px solid #09090B; border-radius: 20px; padding: 40px; max-width: 440px; margin: 0 auto; background: #fff; }
+              .badge { display: inline-block; background: #09090B; color: #fff; font-size: 11px; font-weight: 800; padding: 6px 16px; border-radius: 99px; text-transform: uppercase; margin-bottom: 16px; letter-spacing: 0.05em; }
+              h2 { margin: 0 0 6px; font-size: 22px; }
+              p { color: #52525B; font-size: 13px; margin: 0 0 24px; }
+              .qr-box { background: #FAF9F6; border: 1px solid #E4E4E7; border-radius: 16px; padding: 24px; display: inline-block; margin-bottom: 24px; }
+              .ref-id { font-family: monospace; font-size: 24px; font-weight: 800; margin-top: 14px; letter-spacing: 0.05em; }
+              .details { text-align: left; background: #FAF9F6; border: 1px solid #E4E4E7; padding: 18px; border-radius: 14px; font-size: 13px; line-height: 1.7; }
+              .details-row { display: flex; justify-content: space-between; margin-bottom: 4px; }
+              .details-label { color: #71717A; font-weight: 600; }
+              .details-val { color: #09090B; font-weight: 700; }
+            </style>
+          </head>
+          <body>
+            <div class="card">
+              <div class="badge">Digital Counter QR Pass</div>
+              <h2>Regional Trial Court Clearance Pass</h2>
+              <p>Present this QR pass code at Counter 3 for fast-track clearance certificate printing.</p>
+              <div class="qr-box">
+                <img src="${qrDataUrl}" width="220" height="220" style="display: block; margin: 0 auto; border-radius: 8px;" />
+                <div class="ref-id">${doc.id || "CLR-2026-0001"}</div>
+              </div>
+              <div class="details">
+                <div class="details-row"><span class="details-label">Applicant:</span><span class="details-val">${doc.fullName || ""}</span></div>
+                <div class="details-row"><span class="details-label">Document:</span><span class="details-val">${doc.documentType || ""}</span></div>
+                <div class="details-row"><span class="details-label">Purpose:</span><span class="details-val">${doc.purpose || ""}</span></div>
+                <div class="details-row"><span class="details-label">Payment Ref:</span><span class="details-val">${doc.paymentNo || ""}</span></div>
+                <div class="details-row"><span class="details-label">Issued On:</span><span class="details-val">${doc.dateRequested || new Date().toLocaleDateString()}</span></div>
+              </div>
             </div>
-            <div class="details">
-              <div class="details-row"><span class="details-label">Applicant:</span><span class="details-val">${doc.fullName || ""}</span></div>
-              <div class="details-row"><span class="details-label">Document:</span><span class="details-val">${doc.documentType || ""}</span></div>
-              <div class="details-row"><span class="details-label">Purpose:</span><span class="details-val">${doc.purpose || ""}</span></div>
-              <div class="details-row"><span class="details-label">Payment Ref:</span><span class="details-val">${doc.paymentNo || ""}</span></div>
-              <div class="details-row"><span class="details-label">Issued On:</span><span class="details-val">${doc.dateRequested || new Date().toLocaleDateString()}</span></div>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
+          </body>
+        </html>
+      `;
 
-    let iframe = document.getElementById("hidden-print-iframe");
-    if (!iframe) {
-      iframe = document.createElement("iframe");
-      iframe.id = "hidden-print-iframe";
-      iframe.style.position = "fixed";
-      iframe.style.right = "0";
-      iframe.style.bottom = "0";
-      iframe.style.width = "0";
-      iframe.style.height = "0";
-      iframe.style.border = "none";
-      iframe.style.visibility = "hidden";
-      document.body.appendChild(iframe);
+      let iframe = document.getElementById("hidden-print-iframe");
+      if (!iframe) {
+        iframe = document.createElement("iframe");
+        iframe.id = "hidden-print-iframe";
+        iframe.style.position = "fixed";
+        iframe.style.right = "0";
+        iframe.style.bottom = "0";
+        iframe.style.width = "0";
+        iframe.style.height = "0";
+        iframe.style.border = "none";
+        iframe.style.visibility = "hidden";
+        document.body.appendChild(iframe);
+      }
+
+      const iframeDoc = iframe.contentWindow.document;
+      iframeDoc.open();
+      iframeDoc.write(htmlContent);
+      iframeDoc.close();
+
+      const img = iframeDoc.querySelector("img");
+      if (img) {
+        img.onload = () => {
+          setTimeout(() => {
+            iframe.contentWindow.focus();
+            iframe.contentWindow.print();
+          }, 200);
+        };
+      } else {
+        setTimeout(() => {
+          iframe.contentWindow.focus();
+          iframe.contentWindow.print();
+        }, 300);
+      }
+    } catch (err) {
+      console.error("Error printing QR Pass PDF", err);
     }
-
-    const docObj = iframe.contentWindow.document;
-    docObj.open();
-    docObj.write(htmlContent);
-    docObj.close();
-
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-    }, 250);
   };
 
   const handleDownloadDocPdf = async (doc, previewData) => {
