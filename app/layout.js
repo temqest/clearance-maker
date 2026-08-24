@@ -1,20 +1,28 @@
 import "./globals.css";
-import { Public_Sans } from "next/font/google";
+import { Plus_Jakarta_Sans, Inter } from "next/font/google";
 
-const publicSans = Public_Sans({
+const plusJakartaSans = Plus_Jakarta_Sans({
   subsets: ["latin"],
+  variable: "--font-heading",
+  display: "swap"
+});
+
+const inter = Inter({
+  subsets: ["latin"],
+  variable: "--font-body",
   display: "swap"
 });
 
 export const metadata = {
-  title: "RTC Clearance Editor",
-  description: "Regional Trial Court clearance editor with live preview"
+  title: "RTC Clearance Express — Official Municipal & Court Clearance Platform",
+  description: "Unified digital clearance platform connecting constituents and station clerks. Request clearances online, generate QR passes, and verify counter issuance instantly."
 };
 
 export default function RootLayout({ children }) {
   return (
-    <html lang="en">
-      <body className={publicSans.className}>{children}</body>
+    <html lang="en" className={`${plusJakartaSans.variable} ${inter.variable}`}>
+      <body className={inter.className}>{children}</body>
     </html>
   );
 }
+

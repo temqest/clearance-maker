@@ -1,185 +1,109 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { createSupabaseBrowserClient } from "lib/supabase/client";
-import styles from "./page.module.css";
+import Link from "next/link";
+import { MockProvider } from "../../lib/mockStore";
+import StaffPortal from "../../components/staff/StaffPortal";
+import { createSupabaseBrowserClient } from "../../lib/supabase/client";
 
-export default function HomeDashboardPage() {
+function StaffDashboardContent() {
   const router = useRouter();
   const supabase = useMemo(() => createSupabaseBrowserClient(), []);
-  const [query, setQuery] = useState("");
-  const [documents, setDocuments] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [loadingError, setLoadingError] = useState("");
-  const [currentUserId, setCurrentUserId] = useState("");
-
-  const fetchDocuments = async () => {
-    if (!supabase) return;
-
-    const { data, error } = await supabase
-      .from("documents")
-      .select("id, full_name, purpose, cert_no, form_data, updated_at")
-      .order("updated_at", { ascending: false });
-
-    if (error) {
-      setLoadingError(error.message);
-      return;
-    }
-
-    setLoadingError("");
-    setDocuments(data ?? []);
-  };
-
-  useEffect(() => {
-    if (!supabase) return;
-
-    const bootstrap = async () => {
-      const {
-        data: { user }
-      } = await supabase.auth.getUser();
-
-      if (!user) {
-        router.replace("/login");
-        return;
-      }
-
-      setCurrentUserId(user.id);
-      await fetchDocuments();
-      setLoading(false);
-    };
-
-    bootstrap();
-  }, [router, supabase]);
-
-  useEffect(() => {
-    if (!currentUserId) return;
-
-    const timeoutId = window.setTimeout(() => {
-      fetchDocuments();
-    }, 250);
-
-    return () => window.clearTimeout(timeoutId);
-  }, [query, currentUserId]);
+  const [headerSearch, setHeaderSearch] = useState("");
 
   const handleLogout = async () => {
-    if (!supabase) return;
-    await supabase.auth.signOut();
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch (err) {}
+    }
     router.replace("/login");
   };
 
-  const handleOpenDocument = (id) => {
-    router.push(`/editor?id=${id}`);
-  };
-
-  const extractDocumentValues = (document) => {
-    const formData = document.form_data || {};
-    const certNo = document.cert_no || formData.certNo || "-";
-    const fullName = document.full_name || formData.fullName || "-";
-    const purpose = document.purpose || formData.purpose || "-";
-
-    return { certNo, fullName, purpose };
-  };
-
-  const filteredDocuments = useMemo(() => {
-    const mapped = documents.map((document) => {
-      const values = extractDocumentValues(document);
-
-      return {
-        id: document.id,
-        certNo: values.certNo,
-        fullName: values.fullName,
-        purpose: values.purpose,
-        updatedAt: document.updated_at
-          ? new Date(document.updated_at).toLocaleString()
-          : "No update timestamp"
-      };
-    });
-
-    const normalizedQuery = query.trim().toLowerCase();
-    if (!normalizedQuery) return mapped;
-
-    return mapped.filter((document) => {
-      return (
-        document.certNo.toLowerCase().includes(normalizedQuery) ||
-        document.fullName.toLowerCase().includes(normalizedQuery) ||
-        document.purpose.toLowerCase().includes(normalizedQuery)
-      );
-    });
-  }, [documents, query]);
-
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
-        <div>
-          <h1>Clearance Document Registry</h1>
-        </div>
-        <div className={styles.headerActions}>
-          <p className={styles.headerMeta}>Official Records Workspace</p>
-          <button type="button" className={styles.logoutButton} onClick={handleLogout}>
-            Log Out
-          </button>
+    <div style={{ minHeight: "100vh", backgroundColor: "#FAF9F6" }}>
+      {/* TOP HEADER BAR - Original Site Palette (Cream/White/Black/Gold) */}
+      <header style={{
+        backgroundColor: "rgba(255, 255, 255, 0.95)",
+        backdropFilter: "blur(12px)",
+        WebkitBackdropFilter: "blur(12px)",
+        borderBottom: "1px solid #E4E4E7",
+        position: "sticky",
+        top: 0,
+        zIndex: 50,
+        width: "100%"
+      }}>
+        <div style={{
+          padding: "12px 28px",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+          gap: "16px"
+        }}>
+          {/* Brand & Workspace Title */}
+          <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+            <Link href="/home" style={{ textDecoration: "none", display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{ fontSize: "1.2rem", fontWeight: "800", color: "#09090B", letterSpacing: "-0.02em" }}>
+                RTC Clearance Express
+              </span>
+            </Link>
+            <span style={{ color: "#D4D4D8", fontSize: "1.1rem", fontWeight: "300" }}>/</span>
+            <span style={{
+              fontSize: "0.75rem",
+              fontWeight: "600",
+              color: "#71717A",
+              textTransform: "uppercase",
+              letterSpacing: "0.08em"
+            }}>
+              Official Staff Workspace
+            </span>
+          </div>
+
+          {/* Topbar Right Tools & User Profile */}
+          <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+            {/* User Profile Info Card */}
+            <div style={{
+              display: "flex",
+              alignItems: "center",
+              gap: "10px"
+            }}>
+              <div style={{
+                width: "34px",
+                height: "34px",
+                borderRadius: "50%",
+                backgroundColor: "#FEF3C7",
+                color: "#D97706",
+                border: "1px solid #FDE68A",
+                fontWeight: 800,
+                fontSize: "0.9rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                I
+              </div>
+              <div style={{ display: "flex", flexDirection: "column", textAlign: "left", lineHeight: "1.2" }}>
+                <span style={{ fontSize: "0.825rem", fontWeight: "700", color: "#09090B" }}>Iriga Staff</span>
+                <span style={{ fontSize: "0.725rem", color: "#71717A" }}>staff@rtc.gov.ph</span>
+              </div>
+            </div>
+          </div>
         </div>
       </header>
 
-      <section className={styles.toolbar}>
-        <div className={styles.searchWrap}>
-          <label htmlFor="search" className={styles.searchLabel}>
-            Search Existing Files
-          </label>
-          <input
-            id="search"
-            type="search"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            className={styles.searchInput}
-            placeholder="Search by document ID, full name, or purpose"
-          />
-        </div>
+      {/* Staff Portal Workspace */}
+      <main>
+        <StaffPortal headerSearchQuery={headerSearch} onLogout={handleLogout} />
+      </main>
+    </div>
+  );
+}
 
-        <div className={styles.toolbarActions}>
-          <button type="button" className={styles.createButton} onClick={() => router.push("/editor")}>
-            <svg className={styles.buttonIcon} viewBox="0 0 20 20" aria-hidden="true" focusable="false">
-              <path d="M10 4.25a.75.75 0 0 1 .75.75v4.25H15a.75.75 0 0 1 0 1.5h-4.25V15a.75.75 0 0 1-1.5 0v-4.25H5a.75.75 0 0 1 0-1.5h4.25V5a.75.75 0 0 1 .75-.75Z" />
-            </svg>
-            Create Document
-          </button>
-        </div>
-      </section>
-
-      <section className={styles.library}>
-        <div className={styles.tableHead}>
-          <span>Document ID</span>
-          <span>Full Name</span>
-          <span>Purpose</span>
-          <span>Last Updated</span>
-        </div>
-
-        <ul className={styles.list}>
-          {loading ? (
-            <li className={styles.empty}>Loading files...</li>
-          ) : loadingError ? (
-            <li className={styles.empty}>Failed to load files: {loadingError}</li>
-          ) : filteredDocuments.length ? (
-            filteredDocuments.map((document) => (
-              <li key={document.id} className={styles.row}>
-                <button
-                  type="button"
-                  className={styles.rowButton}
-                  onClick={() => handleOpenDocument(document.id)}
-                >
-                  <span className={styles.cell}>{document.certNo}</span>
-                  <span className={styles.cell}>{document.fullName}</span>
-                  <span className={styles.cell}>{document.purpose}</span>
-                  <span className={`${styles.cell} ${styles.dateCell}`}>{document.updatedAt}</span>
-                </button>
-              </li>
-            ))
-          ) : (
-            <li className={styles.empty}>No files exist in the table.</li>
-          )}
-        </ul>
-      </section>
-    </main>
+export default function HomeDashboardPage() {
+  return (
+    <MockProvider>
+      <StaffDashboardContent />
+    </MockProvider>
   );
 }
