@@ -34,8 +34,8 @@ export default function RoleSelector() {
           </span>
         </Link>
 
-        {/* Staff Login Link for Authorized Personnel */}
-        <Link href="/login" style={{
+        {/* Back to Home Link for Portal Users */}
+        <Link href="/" style={{
           padding: "8px 18px",
           borderRadius: "9999px",
           backgroundColor: "#09090B",
@@ -43,9 +43,12 @@ export default function RoleSelector() {
           fontWeight: 700,
           fontSize: "0.825rem",
           textDecoration: "none",
+          display: "inline-flex",
+          alignItems: "center",
+          gap: "6px",
           boxShadow: "0 4px 12px rgba(9, 9, 11, 0.15)"
         }}>
-          Court Staff Login →
+          ← Back to Home
         </Link>
       </div>
     </header>

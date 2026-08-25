@@ -43,7 +43,7 @@ export default function UserPortal() {
     address: "",
     purpose: "",
     civilStatus: "Single",
-    documentType: "Barangay / Police Clearance",
+    documentType: "Official Clearance Document",
   });
 
   // Restore local portal state from localStorage
@@ -874,10 +874,7 @@ export default function UserPortal() {
                       boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)"
                     }}
                   >
-                    <option value="Barangay / Police Clearance">Barangay / Police Clearance</option>
-                    <option value="Certificate of Residency">Certificate of Residency</option>
-                    <option value="Business Clearance Pass">Business Clearance Pass</option>
-                    <option value="Indigency Certificate">Indigency Certificate</option>
+                    <option value="Official Clearance Document">Official Clearance Document</option>
                   </select>
                 </div>
 
@@ -1299,8 +1296,8 @@ export default function UserPortal() {
                 </label>
                 <textarea
                   required
-                  rows={3}
-                  placeholder="e.g. 123 Mabini St., Brgy. San Jose, Iriga City, Camarines Sur"
+                  rows={2}
+                  placeholder="e.g. Brgy. San Jose, Iriga City"
                   value={formData.address}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   style={{
@@ -1315,7 +1312,7 @@ export default function UserPortal() {
                   }}
                 />
                 <span style={{ display: "block", fontSize: "0.775rem", color: "#71717A", marginTop: "6px", fontWeight: 500 }}>
-                  Include House/Lot No., Street, Barangay, City/Municipality, and Province.
+                  Enter your complete address (additional specifics like street or province are optional).
                 </span>
               </div>
             </div>

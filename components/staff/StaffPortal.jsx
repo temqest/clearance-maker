@@ -85,6 +85,24 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
     return matchesSearch;
   });
 
+  // Pagination State (10 items per page)
+  const [queuePage, setQueuePage] = useState(1);
+  const [registryPage, setRegistryPage] = useState(1);
+  const ITEMS_PER_PAGE = 10;
+
+  useEffect(() => {
+    setQueuePage(1);
+    setRegistryPage(1);
+  }, [effectiveSearch, statusFilter]);
+
+  const totalQueuePages = Math.ceil(filteredDocs.length / ITEMS_PER_PAGE) || 1;
+  const safeQueuePage = Math.min(queuePage, totalQueuePages);
+  const paginatedQueueDocs = filteredDocs.slice((safeQueuePage - 1) * ITEMS_PER_PAGE, safeQueuePage * ITEMS_PER_PAGE);
+
+  const totalRegistryPages = Math.ceil(filteredDocs.length / ITEMS_PER_PAGE) || 1;
+  const safeRegistryPage = Math.min(registryPage, totalRegistryPages);
+  const paginatedRegistryDocs = filteredDocs.slice((safeRegistryPage - 1) * ITEMS_PER_PAGE, safeRegistryPage * ITEMS_PER_PAGE);
+
   // Handle original editor field updates
   const handleFieldChange = (fieldId, value) => {
     setFormData((prev) => ({
@@ -292,18 +310,22 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
 
   return (
     <div className="staff-layout-container" style={{ display: "flex", minHeight: "calc(100vh - 61px)", backgroundColor: "#F3F4F6" }}>
-      {/* SIDEBAR NAVIGATION (Light Neutral Background so Primary Action pops) */}
+      {/* SIDEBAR NAVIGATION (Pinned to Visible Viewport Bottom) */}
       <aside className="staff-sidebar-aside" style={{
         width: "250px",
+        height: "calc(100vh - 61px)",
+        position: "sticky",
+        top: "61px",
         backgroundColor: "#FFFFFF",
         borderRight: "1px solid #E4E4E7",
-        padding: "24px 16px",
+        padding: "20px 16px",
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        flexShrink: 0
+        flexShrink: 0,
+        boxSizing: "border-box"
       }}>
-        <div>
+        <div style={{ overflowY: "auto", flex: 1, paddingBottom: "12px" }}>
           <nav className="staff-sidebar-nav" style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             {/* 1. Dashboard */}
             <button
@@ -785,15 +807,15 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                   <thead>
                     <tr style={{ backgroundColor: "#FAF9F6", borderBottom: "1px solid #E4E4E7", color: "#71717A", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
-                      <th style={{ padding: "14px 18px" }}>Doc ID</th>
-                      <th style={{ padding: "14px 18px" }}>Constituent Name</th>
-                      <th style={{ padding: "14px 18px" }}>Purpose</th>
-                      <th style={{ padding: "14px 18px" }}>Status</th>
-                      <th style={{ padding: "14px 18px", textAlign: "right" }}>Next Action</th>
+                      <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Doc ID</th>
+                      <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Constituent Name</th>
+                      <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Purpose</th>
+                      <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Status</th>
+                      <th style={{ padding: "14px 18px", textAlign: "right", verticalAlign: "middle" }}>Next Action</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredDocs.map((doc) => {
+                    {filteredDocs.slice(0, 5).map((doc) => {
                       const isPending = doc.status.includes("Pending");
                       return (
                         <tr
@@ -807,17 +829,17 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                             transition: "background-color 0.15s ease"
                           }}
                         >
-                          <td style={{ padding: "14px 18px", fontWeight: 800, fontFamily: "monospace", color: "#09090B" }}>
+                          <td style={{ padding: "14px 18px", fontWeight: 800, fontFamily: "monospace", color: "#09090B", verticalAlign: "middle" }}>
                             {doc.id}
                           </td>
-                          <td style={{ padding: "14px 18px" }}>
+                          <td style={{ padding: "14px 18px", verticalAlign: "middle" }}>
                             <div style={{ fontWeight: 700, color: "#09090B" }}>{doc.fullName}</div>
                             <div style={{ fontSize: "0.775rem", color: "#71717A" }}>{doc.address}</div>
                           </td>
-                          <td style={{ padding: "14px 18px", color: "#52525B" }}>{doc.purpose}</td>
-                          <td style={{ padding: "14px 18px" }}>
+                          <td style={{ padding: "14px 18px", color: "#52525B", verticalAlign: "middle" }}>{doc.purpose}</td>
+                          <td style={{ padding: "14px 18px", verticalAlign: "middle" }}>
                             <span style={{
-                              padding: "4px 10px",
+                              padding: "5px 12px",
                               borderRadius: "9999px",
                               fontSize: "0.725rem",
                               fontWeight: 800,
@@ -825,13 +847,14 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                               color: isPending ? "#D97706" : "#065F46",
                               display: "inline-flex",
                               alignItems: "center",
-                              gap: "4px"
+                              gap: "5px",
+                              whiteSpace: "nowrap"
                             }}>
-                              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: isPending ? "#D97706" : "#059669" }}></span>
+                              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: isPending ? "#D97706" : "#059669", flexShrink: 0 }}></span>
                               {doc.status}
                             </span>
                           </td>
-                          <td style={{ padding: "14px 18px", textAlign: "right" }}>
+                          <td style={{ padding: "14px 18px", textAlign: "right", verticalAlign: "middle" }}>
                             {/* DYNAMIC CONTEXT-AWARE BUTTON ACTION & DELETE */}
                             <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", alignItems: "center" }}>
                               {isPending ? (
@@ -841,15 +864,17 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                                     handlePrintActualDocument(doc);
                                   }}
                                   style={{
-                                    padding: "7px 18px",
+                                    padding: "5px 13px",
                                     backgroundColor: "#09090B",
                                     color: "#FFFFFF",
                                     border: "none",
                                     borderRadius: "9999px",
                                     fontWeight: 700,
-                                    fontSize: "0.8rem",
+                                    fontSize: "0.775rem",
+                                    lineHeight: 1.2,
                                     cursor: "pointer",
-                                    boxShadow: "0 2px 8px rgba(9, 9, 11, 0.12)"
+                                    whiteSpace: "nowrap",
+                                    boxShadow: "0 2px 6px rgba(9, 9, 11, 0.12)"
                                   }}
                                 >
                                   Print Clearance →
@@ -861,14 +886,16 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                                     handlePrintActualDocument(doc);
                                   }}
                                   style={{
-                                    padding: "7px 16px",
+                                    padding: "5px 13px",
                                     backgroundColor: "#FFFFFF",
                                     color: "#09090B",
                                     border: "1px solid #D4D4D8",
                                     borderRadius: "9999px",
                                     fontWeight: 600,
-                                    fontSize: "0.8rem",
-                                    cursor: "pointer"
+                                    fontSize: "0.775rem",
+                                    lineHeight: 1.2,
+                                    cursor: "pointer",
+                                    whiteSpace: "nowrap"
                                   }}
                                 >
                                   Reprint
@@ -884,7 +911,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                                   setDeleteConfirmNameInput("");
                                 }}
                                 style={{
-                                  padding: "7px 10px",
+                                  padding: "5px 7px",
                                   backgroundColor: "#FEF2F2",
                                   color: "#DC2626",
                                   border: "1px solid #FCA5A5",
@@ -895,7 +922,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                                   justifyContent: "center"
                                 }}
                               >
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                                   <polyline points="3 6 5 6 21 6"/>
                                   <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
                                 </svg>
@@ -907,6 +934,16 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                     })}
                   </tbody>
                 </table>
+                {filteredDocs.length > 5 && (
+                  <div style={{ padding: "10px 18px", backgroundColor: "#FAF9F6", borderTop: "1px solid #E4E4E7", textAlign: "center" }}>
+                    <button
+                      onClick={() => setActiveNav("queue")}
+                      style={{ background: "none", border: "none", color: "#09090B", fontWeight: 700, fontSize: "0.8rem", cursor: "pointer" }}
+                    >
+                      Showing latest 5 of {filteredDocs.length} items — View Full Queue →
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -983,121 +1020,216 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#FAF9F6", borderBottom: "1px solid #E4E4E7", color: "#71717A", fontSize: "0.775rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    <th style={{ padding: "16px 20px" }}>Doc ID</th>
-                    <th style={{ padding: "16px 20px" }}>Constituent Name</th>
-                    <th style={{ padding: "16px 20px" }}>Document Type</th>
-                    <th style={{ padding: "16px 20px" }}>Payment Ref</th>
-                    <th style={{ padding: "16px 20px" }}>Status</th>
-                    <th style={{ padding: "16px 20px", textAlign: "right" }}>Next Action</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Doc ID</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Constituent Name</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Document Type</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Payment Ref</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Status</th>
+                    <th style={{ padding: "14px 18px", textAlign: "right", verticalAlign: "middle" }}>Next Action</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDocs.map((doc) => {
-                    const isPending = doc.status.includes("Pending");
-                    return (
-                      <tr
-                        key={doc.id}
-                        onClick={() => handleOpenDocumentSplitView(doc)}
-                        style={{
-                          borderBottom: "1px solid #F4F4F5",
-                          fontSize: "0.925rem",
-                          cursor: "pointer",
-                          backgroundColor: isPending ? "#FFFDF5" : "#FFFFFF"
-                        }}
-                      >
-                        <td style={{ padding: "16px 20px", fontWeight: 800, color: "#09090B", fontFamily: "monospace" }}>{doc.id}</td>
-                        <td style={{ padding: "16px 20px" }}>
-                          <div style={{ fontWeight: 700, color: "#09090B" }}>{doc.fullName}</div>
-                          <div style={{ fontSize: "0.8rem", color: "#71717A", marginTop: "2px" }}>{doc.purpose}</div>
-                        </td>
-                        <td style={{ padding: "16px 20px", color: "#52525B" }}>{doc.documentType}</td>
-                        <td style={{ padding: "16px 20px", fontFamily: "monospace", fontSize: "0.85rem", color: "#71717A" }}>{doc.paymentNo}</td>
-                        <td style={{ padding: "16px 20px" }}>
-                          <span style={{
-                            padding: "6px 14px",
-                            borderRadius: "9999px",
-                            fontSize: "0.75rem",
-                            fontWeight: 800,
-                            backgroundColor: isPending ? "#FEF3C7" : "#ECFDF5",
-                            color: isPending ? "#D97706" : "#065F46"
-                          }}>
-                            {doc.status}
-                          </span>
-                        </td>
-                        <td style={{ padding: "16px 20px", textAlign: "right" }}>
-                          <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", alignItems: "center" }}>
-                            {isPending ? (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handlePrintActualDocument(doc);
-                                }}
-                                style={{
-                                  padding: "8px 18px",
-                                  backgroundColor: "#09090B",
-                                  color: "#FFFFFF",
-                                  border: "none",
-                                  borderRadius: "9999px",
-                                  fontWeight: 700,
-                                  fontSize: "0.825rem",
-                                  cursor: "pointer"
-                                }}
-                              >
-                                Print Clearance →
-                              </button>
-                            ) : (
-                              <button
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handlePrintActualDocument(doc);
-                                }}
-                                style={{
-                                  padding: "8px 18px",
-                                  backgroundColor: "#FFFFFF",
-                                  color: "#09090B",
-                                  border: "1px solid #D4D4D8",
-                                  borderRadius: "9999px",
-                                  fontWeight: 600,
-                                  fontSize: "0.825rem",
-                                  cursor: "pointer"
-                                }}
-                              >
-                                Reprint
-                              </button>
-                            )}
+                  {paginatedQueueDocs.length === 0 ? (
+                    <tr>
+                      <td colSpan={6} style={{ padding: "32px 20px", textAlign: "center", color: "#71717A", fontSize: "0.9rem" }}>
+                        No application records found matching your filters.
+                      </td>
+                    </tr>
+                  ) : (
+                    paginatedQueueDocs.map((doc) => {
+                      const isPending = doc.status.includes("Pending");
+                      return (
+                        <tr
+                          key={doc.id}
+                          onClick={() => handleOpenDocumentSplitView(doc)}
+                          style={{
+                            borderBottom: "1px solid #F4F4F5",
+                            fontSize: "0.925rem",
+                            cursor: "pointer",
+                            backgroundColor: isPending ? "#FFFDF5" : "#FFFFFF"
+                          }}
+                        >
+                          <td style={{ padding: "14px 18px", fontWeight: 800, color: "#09090B", fontFamily: "monospace", verticalAlign: "middle" }}>{doc.id}</td>
+                          <td style={{ padding: "14px 18px", verticalAlign: "middle" }}>
+                            <div style={{ fontWeight: 700, color: "#09090B" }}>{doc.fullName}</div>
+                            <div style={{ fontSize: "0.8rem", color: "#71717A", marginTop: "2px" }}>{doc.purpose}</div>
+                          </td>
+                          <td style={{ padding: "14px 18px", color: "#52525B", verticalAlign: "middle" }}>{doc.documentType}</td>
+                          <td style={{ padding: "14px 18px", fontFamily: "monospace", fontSize: "0.85rem", color: "#71717A", verticalAlign: "middle" }}>{doc.paymentNo}</td>
+                          <td style={{ padding: "14px 18px", verticalAlign: "middle" }}>
+                            <span style={{
+                              padding: "5px 12px",
+                              borderRadius: "9999px",
+                              fontSize: "0.75rem",
+                              fontWeight: 800,
+                              backgroundColor: isPending ? "#FEF3C7" : "#ECFDF5",
+                              color: isPending ? "#D97706" : "#065F46",
+                              display: "inline-flex",
+                              alignItems: "center",
+                              gap: "5px",
+                              whiteSpace: "nowrap"
+                            }}>
+                              <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: isPending ? "#D97706" : "#059669", flexShrink: 0 }}></span>
+                              {doc.status}
+                            </span>
+                          </td>
+                          <td style={{ padding: "14px 18px", textAlign: "right", verticalAlign: "middle" }}>
+                            <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", alignItems: "center" }}>
+                              {isPending ? (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePrintActualDocument(doc);
+                                  }}
+                                  style={{
+                                    padding: "5px 13px",
+                                    backgroundColor: "#09090B",
+                                    color: "#FFFFFF",
+                                    border: "none",
+                                    borderRadius: "9999px",
+                                    fontWeight: 700,
+                                    fontSize: "0.775rem",
+                                    lineHeight: 1.2,
+                                    cursor: "pointer",
+                                    whiteSpace: "nowrap",
+                                    boxShadow: "0 2px 6px rgba(9, 9, 11, 0.12)"
+                                  }}
+                                >
+                                  Print Clearance →
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handlePrintActualDocument(doc);
+                                  }}
+                                  style={{
+                                    padding: "5px 13px",
+                                    backgroundColor: "#FFFFFF",
+                                    color: "#09090B",
+                                    border: "1px solid #D4D4D8",
+                                    borderRadius: "9999px",
+                                    fontWeight: 600,
+                                    fontSize: "0.775rem",
+                                    lineHeight: 1.2,
+                                    cursor: "pointer",
+                                    whiteSpace: "nowrap"
+                                  }}
+                                >
+                                  Reprint
+                                </button>
+                              )}
 
-                            <button
-                              type="button"
-                              title="Delete Document"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                setDocToDelete(doc);
-                                setDeleteConfirmNameInput("");
-                              }}
-                              style={{
-                                padding: "8px 10px",
-                                backgroundColor: "#FEF2F2",
-                                color: "#DC2626",
-                                border: "1px solid #FCA5A5",
-                                borderRadius: "9999px",
-                                cursor: "pointer",
-                                display: "inline-flex",
-                                alignItems: "center",
-                                justifyContent: "center"
-                              }}
-                            >
-                              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                <polyline points="3 6 5 6 21 6"/>
-                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                              </svg>
-                            </button>
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
+                              <button
+                                type="button"
+                                title="Delete Document"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDocToDelete(doc);
+                                  setDeleteConfirmNameInput("");
+                                }}
+                                style={{
+                                  padding: "5px 7px",
+                                  backgroundColor: "#FEF2F2",
+                                  color: "#DC2626",
+                                  border: "1px solid #FCA5A5",
+                                  borderRadius: "9999px",
+                                  cursor: "pointer",
+                                  display: "inline-flex",
+                                  alignItems: "center",
+                                  justifyContent: "center"
+                                }}
+                              >
+                                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                  <polyline points="3 6 5 6 21 6"/>
+                                  <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                                </svg>
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  )}
                 </tbody>
               </table>
+
+              {/* PAGINATION TOOLBAR */}
+              <div style={{
+                padding: "14px 20px",
+                backgroundColor: "#FAF9F6",
+                borderTop: "1px solid #E4E4E7",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "12px",
+                fontSize: "0.825rem",
+                color: "#71717A"
+              }}>
+                <div>
+                  Showing {filteredDocs.length === 0 ? 0 : (safeQueuePage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeQueuePage * ITEMS_PER_PAGE, filteredDocs.length)} of {filteredDocs.length} entries
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <button
+                    onClick={() => setQueuePage((p) => Math.max(p - 1, 1))}
+                    disabled={safeQueuePage === 1}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: "9999px",
+                      border: "1px solid #D4D4D8",
+                      backgroundColor: safeQueuePage === 1 ? "#F4F4F5" : "#FFFFFF",
+                      color: safeQueuePage === 1 ? "#A1A1AA" : "#09090B",
+                      fontWeight: 600,
+                      fontSize: "0.775rem",
+                      cursor: safeQueuePage === 1 ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    ← Prev
+                  </button>
+
+                  {Array.from({ length: totalQueuePages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setQueuePage(pageNum)}
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        border: pageNum === safeQueuePage ? "none" : "1px solid #E4E4E7",
+                        backgroundColor: pageNum === safeQueuePage ? "#09090B" : "#FFFFFF",
+                        color: pageNum === safeQueuePage ? "#FFFFFF" : "#09090B",
+                        fontWeight: 700,
+                        fontSize: "0.775rem",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setQueuePage((p) => Math.min(p + 1, totalQueuePages))}
+                    disabled={safeQueuePage >= totalQueuePages}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: "9999px",
+                      border: "1px solid #D4D4D8",
+                      backgroundColor: safeQueuePage >= totalQueuePages ? "#F4F4F5" : "#FFFFFF",
+                      color: safeQueuePage >= totalQueuePages ? "#A1A1AA" : "#09090B",
+                      fontWeight: 600,
+                      fontSize: "0.775rem",
+                      cursor: safeQueuePage >= totalQueuePages ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
@@ -1163,87 +1295,179 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#FAF9F6", borderBottom: "1px solid #E4E4E7", color: "#71717A", fontSize: "0.775rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                    <th style={{ padding: "16px 20px" }}>Doc ID</th>
-                    <th style={{ padding: "16px 20px" }}>Full Name</th>
-                    <th style={{ padding: "16px 20px" }}>Document Type</th>
-                    <th style={{ padding: "16px 20px" }}>Purpose</th>
-                    <th style={{ padding: "16px 20px" }}>Date Requested</th>
-                    <th style={{ padding: "16px 20px" }}>Status</th>
-                    <th style={{ padding: "16px 20px", textAlign: "right" }}>Inspect</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Doc ID</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Full Name</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Document Type</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Purpose</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Date Requested</th>
+                    <th style={{ padding: "14px 18px", verticalAlign: "middle" }}>Status</th>
+                    <th style={{ padding: "14px 18px", textAlign: "right", verticalAlign: "middle" }}>Inspect</th>
                   </tr>
                 </thead>
                 <tbody>
-                  {filteredDocs.map((doc) => (
-                    <tr
-                      key={doc.id}
-                      onClick={() => handleOpenDocumentSplitView(doc)}
-                      style={{ borderBottom: "1px solid #F4F4F5", fontSize: "0.925rem", cursor: "pointer" }}
-                    >
-                      <td style={{ padding: "16px 20px", fontWeight: 800, fontFamily: "monospace", color: "#09090B" }}>{doc.id}</td>
-                      <td style={{ padding: "16px 20px", fontWeight: 700, color: "#09090B" }}>{doc.fullName}</td>
-                      <td style={{ padding: "16px 20px", color: "#52525B" }}>{doc.documentType}</td>
-                      <td style={{ padding: "16px 20px", color: "#52525B" }}>{doc.purpose}</td>
-                      <td style={{ padding: "16px 20px", color: "#71717A", fontSize: "0.875rem" }}>{doc.dateRequested}</td>
-                      <td style={{ padding: "16px 20px" }}>
-                        <span style={{
-                          padding: "6px 14px",
-                          borderRadius: "9999px",
-                          fontSize: "0.75rem",
-                          fontWeight: 800,
-                          backgroundColor: doc.status.includes("Printed") || doc.status.includes("Released") ? "#ECFDF5" : "#FEF3C7",
-                          color: doc.status.includes("Printed") || doc.status.includes("Released") ? "#065F46" : "#D97706"
-                        }}>
-                          {doc.status}
-                        </span>
-                      </td>
-                      <td style={{ padding: "16px 20px", textAlign: "right" }}>
-                        <div style={{ display: "flex", gap: "8px", justifyContent: "flex-end", alignItems: "center" }}>
-                          <button
-                            onClick={() => handleOpenDocumentSplitView(doc)}
-                            style={{
-                              padding: "6px 14px",
-                              backgroundColor: "#FFFFFF",
-                              color: "#09090B",
-                              border: "1px solid #D4D4D8",
-                              borderRadius: "9999px",
-                              fontWeight: 600,
-                              fontSize: "0.8rem",
-                              cursor: "pointer"
-                            }}
-                          >
-                            Inspect / Edit
-                          </button>
-                          <button
-                            type="button"
-                            title="Delete Document"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setDocToDelete(doc);
-                              setDeleteConfirmNameInput("");
-                            }}
-                            style={{
-                              padding: "6px 10px",
-                              backgroundColor: "#FEF2F2",
-                              color: "#DC2626",
-                              border: "1px solid #FCA5A5",
-                              borderRadius: "9999px",
-                              cursor: "pointer",
-                              display: "inline-flex",
-                              alignItems: "center",
-                              justifyContent: "center"
-                            }}
-                          >
-                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                              <polyline points="3 6 5 6 21 6"/>
-                              <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                            </svg>
-                          </button>
-                        </div>
+                  {paginatedRegistryDocs.length === 0 ? (
+                    <tr>
+                      <td colSpan={7} style={{ padding: "32px 20px", textAlign: "center", color: "#71717A", fontSize: "0.9rem" }}>
+                        No clearance registry records found matching your filters.
                       </td>
                     </tr>
-                  ))}
+                  ) : (
+                    paginatedRegistryDocs.map((doc) => (
+                      <tr
+                        key={doc.id}
+                        onClick={() => handleOpenDocumentSplitView(doc)}
+                        style={{ borderBottom: "1px solid #F4F4F5", fontSize: "0.925rem", cursor: "pointer" }}
+                      >
+                        <td style={{ padding: "14px 18px", fontWeight: 800, fontFamily: "monospace", color: "#09090B", verticalAlign: "middle" }}>{doc.id}</td>
+                        <td style={{ padding: "14px 18px", fontWeight: 700, color: "#09090B", verticalAlign: "middle" }}>{doc.fullName}</td>
+                        <td style={{ padding: "14px 18px", color: "#52525B", verticalAlign: "middle" }}>{doc.documentType}</td>
+                        <td style={{ padding: "14px 18px", color: "#52525B", verticalAlign: "middle" }}>{doc.purpose}</td>
+                        <td style={{ padding: "14px 18px", color: "#71717A", fontSize: "0.875rem", verticalAlign: "middle" }}>{doc.dateRequested}</td>
+                        <td style={{ padding: "14px 18px", verticalAlign: "middle" }}>
+                          <span style={{
+                            padding: "5px 12px",
+                            borderRadius: "9999px",
+                            fontSize: "0.75rem",
+                            fontWeight: 800,
+                            backgroundColor: doc.status.includes("Printed") || doc.status.includes("Released") ? "#ECFDF5" : "#FEF3C7",
+                            color: doc.status.includes("Printed") || doc.status.includes("Released") ? "#065F46" : "#D97706",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            gap: "5px",
+                            whiteSpace: "nowrap"
+                          }}>
+                            <span style={{ width: "6px", height: "6px", borderRadius: "50%", backgroundColor: doc.status.includes("Printed") || doc.status.includes("Released") ? "#059669" : "#D97706", flexShrink: 0 }}></span>
+                            {doc.status}
+                          </span>
+                        </td>
+                        <td style={{ padding: "14px 18px", textAlign: "right", verticalAlign: "middle" }}>
+                          <div style={{ display: "flex", gap: "6px", justifyContent: "flex-end", alignItems: "center" }}>
+                            <button
+                              onClick={() => handleOpenDocumentSplitView(doc)}
+                              style={{
+                                padding: "5px 13px",
+                                backgroundColor: "#FFFFFF",
+                                color: "#09090B",
+                                border: "1px solid #D4D4D8",
+                                borderRadius: "9999px",
+                                fontWeight: 600,
+                                fontSize: "0.775rem",
+                                lineHeight: 1.2,
+                                cursor: "pointer",
+                                whiteSpace: "nowrap"
+                              }}
+                            >
+                              Inspect / Edit
+                            </button>
+                            <button
+                              type="button"
+                              title="Delete Document"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDocToDelete(doc);
+                                setDeleteConfirmNameInput("");
+                              }}
+                              style={{
+                                padding: "5px 7px",
+                                backgroundColor: "#FEF2F2",
+                                color: "#DC2626",
+                                border: "1px solid #FCA5A5",
+                                borderRadius: "9999px",
+                                cursor: "pointer",
+                                display: "inline-flex",
+                                alignItems: "center",
+                                justifyContent: "center"
+                              }}
+                            >
+                              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                                <polyline points="3 6 5 6 21 6"/>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                              </svg>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))
+                  )}
                 </tbody>
               </table>
+
+              {/* PAGINATION TOOLBAR */}
+              <div style={{
+                padding: "14px 20px",
+                backgroundColor: "#FAF9F6",
+                borderTop: "1px solid #E4E4E7",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "12px",
+                fontSize: "0.825rem",
+                color: "#71717A"
+              }}>
+                <div>
+                  Showing {filteredDocs.length === 0 ? 0 : (safeRegistryPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeRegistryPage * ITEMS_PER_PAGE, filteredDocs.length)} of {filteredDocs.length} entries
+                </div>
+
+                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                  <button
+                    onClick={() => setRegistryPage((p) => Math.max(p - 1, 1))}
+                    disabled={safeRegistryPage === 1}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: "9999px",
+                      border: "1px solid #D4D4D8",
+                      backgroundColor: safeRegistryPage === 1 ? "#F4F4F5" : "#FFFFFF",
+                      color: safeRegistryPage === 1 ? "#A1A1AA" : "#09090B",
+                      fontWeight: 600,
+                      fontSize: "0.775rem",
+                      cursor: safeRegistryPage === 1 ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    ← Prev
+                  </button>
+
+                  {Array.from({ length: totalRegistryPages }, (_, i) => i + 1).map((pageNum) => (
+                    <button
+                      key={pageNum}
+                      onClick={() => setRegistryPage(pageNum)}
+                      style={{
+                        width: "28px",
+                        height: "28px",
+                        borderRadius: "50%",
+                        border: pageNum === safeRegistryPage ? "none" : "1px solid #E4E4E7",
+                        backgroundColor: pageNum === safeRegistryPage ? "#09090B" : "#FFFFFF",
+                        color: pageNum === safeRegistryPage ? "#FFFFFF" : "#09090B",
+                        fontWeight: 700,
+                        fontSize: "0.775rem",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center"
+                      }}
+                    >
+                      {pageNum}
+                    </button>
+                  ))}
+
+                  <button
+                    onClick={() => setRegistryPage((p) => Math.min(p + 1, totalRegistryPages))}
+                    disabled={safeRegistryPage >= totalRegistryPages}
+                    style={{
+                      padding: "5px 12px",
+                      borderRadius: "9999px",
+                      border: "1px solid #D4D4D8",
+                      backgroundColor: safeRegistryPage >= totalRegistryPages ? "#F4F4F5" : "#FFFFFF",
+                      color: safeRegistryPage >= totalRegistryPages ? "#A1A1AA" : "#09090B",
+                      fontWeight: 600,
+                      fontSize: "0.775rem",
+                      cursor: safeRegistryPage >= totalRegistryPages ? "not-allowed" : "pointer"
+                    }}
+                  >
+                    Next →
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
         )}
