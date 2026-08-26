@@ -19,11 +19,63 @@ export default function UserPortal() {
   const [isScanningReceipt, setIsScanningReceipt] = useState(false);
   const [receiptScanStatus, setReceiptScanStatus] = useState("");
   const receiptVideoRef = useRef(null);
+
+  // Live Webcam Photo Capture state
+  const [isPhotoCameraOpen, setIsPhotoCameraOpen] = useState(false);
+  const [photoCameraStatus, setPhotoCameraStatus] = useState("");
+  const photoVideoRef = useRef(null);
+
   const [photoSrc, setPhotoSrc] = useState("");
   const [realQrUrl, setRealQrUrl] = useState("");
   const [isFullscreenPreviewOpen, setIsFullscreenPreviewOpen] = useState(false);
   const [fullscreenZoomMode, setFullscreenZoomMode] = useState("fit");
   const stepContainerRef = useRef(null);
+
+  // Real-time Webcam Stream for Live Photo Capture
+  useEffect(() => {
+    let stream = null;
+    if (isPhotoCameraOpen) {
+      setPhotoCameraStatus("Accessing device camera...");
+      navigator.mediaDevices?.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } } })
+        .then((s) => {
+          stream = s;
+          if (photoVideoRef.current) {
+            photoVideoRef.current.srcObject = stream;
+            photoVideoRef.current.play();
+          }
+          setPhotoCameraStatus("Position your face inside the box and click Snap Photo!");
+        })
+        .catch((err) => {
+          console.warn("Live photo camera error:", err);
+          setPhotoCameraStatus("Camera access denied or unavailable. Please upload a photo file instead.");
+        });
+    }
+
+    return () => {
+      if (stream) {
+        stream.getTracks().forEach((t) => t.stop());
+      }
+    };
+  }, [isPhotoCameraOpen]);
+
+  const handleSnapPhoto = () => {
+    if (!photoVideoRef.current || photoVideoRef.current.readyState < 2) return;
+    const canvas = document.createElement("canvas");
+    const video = photoVideoRef.current;
+    const size = Math.min(video.videoWidth, video.videoHeight) || 400;
+    canvas.width = size;
+    canvas.height = size;
+    const ctx = canvas.getContext("2d");
+    const startX = (video.videoWidth - size) / 2;
+    const startY = (video.videoHeight - size) / 2;
+    // Mirror image crop for natural selfie capture
+    ctx.translate(size, 0);
+    ctx.scale(-1, 1);
+    ctx.drawImage(video, startX, startY, size, size, 0, 0, size, size);
+    const dataUrl = canvas.toDataURL("image/jpeg", 0.9);
+    setPhotoSrc(dataUrl);
+    setIsPhotoCameraOpen(false);
+  };
 
   useEffect(() => {
     if (userDocument?.id) {
@@ -1023,35 +1075,29 @@ export default function UserPortal() {
                       />
                     </label>
 
-                    <label style={{
-                      padding: "8px 16px",
-                      borderRadius: "9999px",
-                      backgroundColor: "#FFFFFF",
-                      border: "1px solid #D4D4D8",
-                      color: "#09090B",
-                      fontWeight: 700,
-                      fontSize: "0.825rem",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "6px"
-                    }}>
-                      Camera Capture
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="user"
-                        style={{ display: "none" }}
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => setPhotoSrc(ev.target.result);
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
+                    <button
+                      type="button"
+                      onClick={() => setIsPhotoCameraOpen(true)}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: "9999px",
+                        backgroundColor: "#FFFFFF",
+                        border: "1px solid #D4D4D8",
+                        color: "#09090B",
+                        fontWeight: 700,
+                        fontSize: "0.825rem",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        gap: "6px"
+                      }}
+                    >
+                      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                        <circle cx="12" cy="13" r="4"/>
+                      </svg>
+                      Take Live Photo
+                    </button>
                   </div>
 
                   {photoSrc && (
@@ -2110,6 +2156,154 @@ export default function UserPortal() {
                 photoSrc={photoSrc}
                 disableAutoFit={fullscreenZoomMode === "full"}
               />
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* LIVE CAMERA PHOTO CAPTURE MODAL */}
+      {isPhotoCameraOpen && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 9999,
+          backgroundColor: "rgba(9, 9, 11, 0.85)",
+          backdropFilter: "blur(12px)",
+          WebkitBackdropFilter: "blur(12px)",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          padding: "16px"
+        }}>
+          <div style={{
+            backgroundColor: "#FFFFFF",
+            borderRadius: "24px",
+            padding: "24px",
+            maxWidth: "460px",
+            width: "100%",
+            boxShadow: "0 20px 40px rgba(0, 0, 0, 0.3)",
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            gap: "16px"
+          }}>
+            <div style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #E4E4E7", paddingBottom: "12px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#09090B" strokeWidth="2.2">
+                  <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+                  <circle cx="12" cy="13" r="4"/>
+                </svg>
+                <h3 style={{ fontSize: "1.1rem", fontWeight: "800", color: "#09090B", margin: 0 }}>
+                  Take 2×2 Applicant Photo
+                </h3>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsPhotoCameraOpen(false)}
+                style={{
+                  background: "none",
+                  border: "none",
+                  fontSize: "1.25rem",
+                  fontWeight: "700",
+                  color: "#71717A",
+                  cursor: "pointer",
+                  padding: "4px 8px"
+                }}
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* LIVE WEBCAM VIDEO STREAM WITH 2X2 FRAME GUIDELINES */}
+            <div style={{
+              position: "relative",
+              width: "280px",
+              height: "280px",
+              borderRadius: "20px",
+              overflow: "hidden",
+              backgroundColor: "#09090B",
+              border: "3px solid #09090B",
+              boxShadow: "0 4px 16px rgba(0,0,0,0.15)"
+            }}>
+              <video
+                ref={photoVideoRef}
+                autoPlay
+                playsInline
+                muted
+                style={{
+                  width: "100%",
+                  height: "100%",
+                  objectFit: "cover",
+                  transform: "scaleX(-1)" // Mirror view for natural selfie capture
+                }}
+              />
+              {/* 2X2 Framing Guide Overlay */}
+              <div style={{
+                position: "absolute",
+                inset: "16px",
+                border: "2px dashed rgba(255, 255, 255, 0.85)",
+                borderRadius: "16px",
+                pointerEvents: "none",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center"
+              }}>
+                <span style={{ color: "rgba(255, 255, 255, 0.85)", fontSize: "0.7rem", fontWeight: "700", textTransform: "uppercase", letterSpacing: "0.06em", backgroundColor: "rgba(0,0,0,0.5)", padding: "3px 10px", borderRadius: "9999px" }}>
+                  Align Face Inside Box
+                </span>
+              </div>
+            </div>
+
+            <p style={{ fontSize: "0.825rem", color: "#71717A", fontWeight: "600", textAlign: "center", margin: 0 }}>
+              {photoCameraStatus}
+            </p>
+
+            <div style={{ width: "100%", display: "flex", gap: "10px", marginTop: "4px" }}>
+              <button
+                type="button"
+                onClick={handleSnapPhoto}
+                style={{
+                  flex: 1,
+                  padding: "14px",
+                  backgroundColor: "#09090B",
+                  color: "#FFFFFF",
+                  border: "none",
+                  borderRadius: "9999px",
+                  fontWeight: "800",
+                  fontSize: "0.9rem",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                  boxShadow: "0 4px 14px rgba(9, 9, 11, 0.2)",
+                  minHeight: "48px"
+                }}
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <circle cx="12" cy="12" r="10"/>
+                  <circle cx="12" cy="12" r="3"/>
+                </svg>
+                Snap Photo
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsPhotoCameraOpen(false)}
+                style={{
+                  padding: "14px 20px",
+                  backgroundColor: "#FAF9F6",
+                  color: "#09090B",
+                  border: "1px solid #D4D4D8",
+                  borderRadius: "9999px",
+                  fontWeight: "700",
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                  minHeight: "48px"
+                }}
+              >
+                Cancel
+              </button>
             </div>
           </div>
         </div>
