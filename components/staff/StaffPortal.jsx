@@ -15,6 +15,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
 
   // Active sidebar navigation pill
   const [activeNav, setActiveNav] = useState("dashboard"); // 'dashboard' | 'queue' | 'registry' | 'scanner' | 'create'
+  const [mobileEditorTab, setMobileEditorTab] = useState("form"); // 'form' | 'preview'
   const [searchTerm, setSearchTerm] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   
@@ -482,7 +483,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
         </div>
 
         {/* BOTTOM SIDEBAR USER PROFILE CARD */}
-        <div style={{
+        <div className="staff-sidebar-user-block" style={{
           backgroundColor: "#FAF9F6",
           padding: "12px 14px",
           borderRadius: "14px",
@@ -539,14 +540,14 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
       </aside>
 
       {/* MAIN WORKSPACE PANEL */}
-      <main style={{ flex: 1, padding: "28px 36px", overflowY: "auto" }}>
+      <main className="staff-main-panel" style={{ flex: 1, padding: "28px 36px", overflowY: "auto" }}>
 
         {/* 1. DASHBOARD OVERVIEW */}
         {activeNav === "dashboard" && (
           <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
             
-            {/* ACTION & STATUS HEADER (Front-loading stats and establishing button priority) */}
-            <div style={{
+            {/* ACTION & STATUS HEADER (Desktop Only - Hidden on Mobile to save space) */}
+            <div className="staff-desktop-only" style={{
               backgroundColor: "#FFFFFF",
               borderRadius: "20px",
               border: "1px solid #E4E4E7",
@@ -636,7 +637,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   </span>
                 </button>
 
-                {/* UTILITY ACTION: + Clearance Document (Outlined Pill - Rare creation) */}
+                {/* UTILITY ACTION: Clearance Document */}
                 <button
                   onClick={handleOpenBlankSplitView}
                   style={{
@@ -657,13 +658,29 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                     <line x1="12" y1="5" x2="12" y2="19"/>
                     <line x1="5" y1="12" x2="19" y2="12"/>
                   </svg>
-                  + Clearance Document
+                  New Clearance Document
                 </button>
               </div>
             </div>
 
-            {/* REAL-TIME COUNTER STAT CARDS GRID (Task-focused Operational Metrics) */}
-            <div style={{
+            {/* MOBILE MICRO-STATS STRIP (60px Total Height) */}
+            <div className="staff-micro-stats staff-mobile-only">
+              <div className="staff-micro-stat-card">
+                <span className="staff-micro-stat-num" style={{ color: "#D97706" }}>{pendingCount}</span>
+                <span className="staff-micro-stat-label">Pending</span>
+              </div>
+              <div className="staff-micro-stat-card">
+                <span className="staff-micro-stat-num" style={{ color: "#059669" }}>{releasedCount}</span>
+                <span className="staff-micro-stat-label">Released</span>
+              </div>
+              <div className="staff-micro-stat-card">
+                <span className="staff-micro-stat-num" style={{ color: "#09090B" }}>{totalCount}</span>
+                <span className="staff-micro-stat-label">Total Vol</span>
+              </div>
+            </div>
+
+            {/* DESKTOP REAL-TIME COUNTER STAT CARDS GRID */}
+            <div className="staff-desktop-only" style={{
               display: "grid",
               gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
               gap: "16px"
@@ -802,8 +819,8 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                 </div>
               </div>
 
-              {/* TABLE */}
-              <div style={{ borderRadius: "14px", border: "1px solid #E4E4E7", overflow: "hidden" }}>
+              {/* DESKTOP TABLE */}
+              <div className="staff-desktop-table responsive-table-wrapper" style={{ borderRadius: "14px", border: "1px solid #E4E4E7", overflow: "hidden" }}>
                 <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                   <thead>
                     <tr style={{ backgroundColor: "#FAF9F6", borderBottom: "1px solid #E4E4E7", color: "#71717A", fontSize: "0.75rem", textTransform: "uppercase", letterSpacing: "0.06em" }}>
@@ -945,6 +962,104 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   </div>
                 )}
               </div>
+
+              {/* MOBILE CARDS VIEW */}
+              <div className="staff-mobile-cards staff-mobile-only" style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "14px", marginBottom: "16px" }}>
+                {filteredDocs.slice(0, 5).map((doc) => {
+                  const isPending = doc.status.includes("Pending");
+                  return (
+                    <div key={doc.id} className="staff-card-item" onClick={() => handleOpenDocumentSplitView(doc)}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
+                        <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "0.85rem", color: "#09090B" }}>{doc.id}</span>
+                        <span style={{
+                          padding: "4px 12px",
+                          borderRadius: "9999px",
+                          fontSize: "0.725rem",
+                          fontWeight: 800,
+                          backgroundColor: isPending ? "#FEF3C7" : "#ECFDF5",
+                          color: isPending ? "#D97706" : "#065F46"
+                        }}>
+                          {doc.status}
+                        </span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#09090B", lineHeight: "1.25" }}>{doc.fullName}</div>
+                        <div style={{ fontSize: "0.825rem", color: "#71717A", marginTop: "4px" }}>{doc.purpose} • {doc.paymentNo}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePrintActualDocument(doc);
+                          }}
+                          style={{
+                            flex: 1,
+                            minHeight: "44px",
+                            padding: "8px 16px",
+                            backgroundColor: isPending ? "#09090B" : "#FFFFFF",
+                            color: isPending ? "#FFFFFF" : "#09090B",
+                            border: isPending ? "none" : "1px solid #D4D4D8",
+                            borderRadius: "9999px",
+                            fontWeight: 700,
+                            fontSize: "0.825rem",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px"
+                          }}
+                        >
+                          {isPending ? "Print Clearance" : "Reprint"}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDocumentSplitView(doc);
+                          }}
+                          style={{
+                            padding: "8px 16px",
+                            backgroundColor: "#F4F4F5",
+                            color: "#09090B",
+                            border: "1px solid #E4E4E7",
+                            borderRadius: "9999px",
+                            fontWeight: 700,
+                            fontSize: "0.825rem",
+                            cursor: "pointer",
+                            minHeight: "44px"
+                          }}
+                        >
+                          Inspect
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })}
+                {filteredDocs.length > 5 && (
+                  <button
+                    onClick={() => setActiveNav("queue")}
+                    style={{
+                      width: "100%",
+                      padding: "12px",
+                      borderRadius: "14px",
+                      backgroundColor: "#FFFFFF",
+                      border: "1px solid #D4D4D8",
+                      color: "#09090B",
+                      fontWeight: 700,
+                      fontSize: "0.825rem",
+                      cursor: "pointer",
+                      minHeight: "44px"
+                    }}
+                  >
+                    View All {filteredDocs.length} Queue Items →
+                  </button>
+                )}
+              </div>
             </div>
           </div>
         )}
@@ -1016,7 +1131,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               </div>
             </div>
 
-            <div className="responsive-table-wrapper" style={{ backgroundColor: "#FFFFFF", borderRadius: "20px", border: "1px solid #E4E4E7", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02)" }}>
+            <div className="staff-desktop-table responsive-table-wrapper" style={{ backgroundColor: "#FFFFFF", borderRadius: "20px", border: "1px solid #E4E4E7", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02)" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#FAF9F6", borderBottom: "1px solid #E4E4E7", color: "#71717A", fontSize: "0.775rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -1153,82 +1268,168 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   )}
                 </tbody>
               </table>
+            </div>
 
-              {/* PAGINATION TOOLBAR */}
-              <div style={{
-                padding: "14px 20px",
-                backgroundColor: "#FAF9F6",
-                borderTop: "1px solid #E4E4E7",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "12px",
-                fontSize: "0.825rem",
-                color: "#71717A"
-              }}>
-                <div>
-                  Showing {filteredDocs.length === 0 ? 0 : (safeQueuePage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeQueuePage * ITEMS_PER_PAGE, filteredDocs.length)} of {filteredDocs.length} entries
+            {/* MOBILE CARDS VIEW */}
+            <div className="staff-mobile-cards staff-mobile-only" style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "14px", marginBottom: "16px" }}>
+              {paginatedQueueDocs.length === 0 ? (
+                <div style={{ backgroundColor: "#FFFFFF", padding: "24px 16px", borderRadius: "16px", textAlign: "center", color: "#71717A", fontSize: "0.875rem" }}>
+                  No application records found matching your filters.
                 </div>
+              ) : (
+                paginatedQueueDocs.map((doc) => {
+                  const isPending = doc.status.includes("Pending");
+                  return (
+                    <div key={doc.id} className="staff-card-item" onClick={() => handleOpenDocumentSplitView(doc)}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
+                        <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "0.85rem", color: "#09090B" }}>{doc.id}</span>
+                        <span style={{
+                          padding: "4px 12px",
+                          borderRadius: "9999px",
+                          fontSize: "0.725rem",
+                          fontWeight: 800,
+                          backgroundColor: isPending ? "#FEF3C7" : "#ECFDF5",
+                          color: isPending ? "#D97706" : "#065F46"
+                        }}>
+                          {doc.status}
+                        </span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#09090B", lineHeight: "1.25" }}>{doc.fullName}</div>
+                        <div style={{ fontSize: "0.825rem", color: "#71717A", marginTop: "4px" }}>{doc.purpose} • {doc.paymentNo}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handlePrintActualDocument(doc);
+                          }}
+                          style={{
+                            flex: 1,
+                            minHeight: "44px",
+                            padding: "8px 16px",
+                            backgroundColor: isPending ? "#09090B" : "#FFFFFF",
+                            color: isPending ? "#FFFFFF" : "#09090B",
+                            border: isPending ? "none" : "1px solid #D4D4D8",
+                            borderRadius: "9999px",
+                            fontWeight: 700,
+                            fontSize: "0.825rem",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            gap: "6px"
+                          }}
+                        >
+                          {isPending ? "Print Clearance" : "Reprint"}
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <line x1="5" y1="12" x2="19" y2="12"/>
+                            <polyline points="12 5 19 12 12 19"/>
+                          </svg>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDocumentSplitView(doc);
+                          }}
+                          style={{
+                            padding: "8px 16px",
+                            backgroundColor: "#F4F4F5",
+                            color: "#09090B",
+                            border: "1px solid #E4E4E7",
+                            borderRadius: "9999px",
+                            fontWeight: 700,
+                            fontSize: "0.825rem",
+                            cursor: "pointer",
+                            minHeight: "44px"
+                          }}
+                        >
+                          Inspect
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {/* PAGINATION TOOLBAR */}
+            <div style={{
+              padding: "14px 20px",
+              backgroundColor: "#FFFFFF",
+              borderRadius: "16px",
+              border: "1px solid #E4E4E7",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "12px",
+              fontSize: "0.825rem",
+              color: "#71717A"
+            }}>
+              <div>
+                Showing {filteredDocs.length === 0 ? 0 : (safeQueuePage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeQueuePage * ITEMS_PER_PAGE, filteredDocs.length)} of {filteredDocs.length} entries
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <button
+                  onClick={() => setQueuePage((p) => Math.max(p - 1, 1))}
+                  disabled={safeQueuePage === 1}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
+                    border: "1px solid #D4D4D8",
+                    backgroundColor: safeQueuePage === 1 ? "#F4F4F5" : "#FFFFFF",
+                    color: safeQueuePage === 1 ? "#A1A1AA" : "#09090B",
+                    fontWeight: 600,
+                    fontSize: "0.775rem",
+                    cursor: safeQueuePage === 1 ? "not-allowed" : "pointer"
+                  }}
+                >
+                  ← Prev
+                </button>
+
+                {Array.from({ length: totalQueuePages }, (_, i) => i + 1).map((pageNum) => (
                   <button
-                    onClick={() => setQueuePage((p) => Math.max(p - 1, 1))}
-                    disabled={safeQueuePage === 1}
+                    key={pageNum}
+                    onClick={() => setQueuePage(pageNum)}
                     style={{
-                      padding: "5px 12px",
-                      borderRadius: "9999px",
-                      border: "1px solid #D4D4D8",
-                      backgroundColor: safeQueuePage === 1 ? "#F4F4F5" : "#FFFFFF",
-                      color: safeQueuePage === 1 ? "#A1A1AA" : "#09090B",
-                      fontWeight: 600,
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      border: pageNum === safeQueuePage ? "none" : "1px solid #E4E4E7",
+                      backgroundColor: pageNum === safeQueuePage ? "#09090B" : "#FFFFFF",
+                      color: pageNum === safeQueuePage ? "#FFFFFF" : "#09090B",
+                      fontWeight: 700,
                       fontSize: "0.775rem",
-                      cursor: safeQueuePage === 1 ? "not-allowed" : "pointer"
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center"
                     }}
                   >
-                    ← Prev
+                    {pageNum}
                   </button>
+                ))}
 
-                  {Array.from({ length: totalQueuePages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => setQueuePage(pageNum)}
-                      style={{
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "50%",
-                        border: pageNum === safeQueuePage ? "none" : "1px solid #E4E4E7",
-                        backgroundColor: pageNum === safeQueuePage ? "#09090B" : "#FFFFFF",
-                        color: pageNum === safeQueuePage ? "#FFFFFF" : "#09090B",
-                        fontWeight: 700,
-                        fontSize: "0.775rem",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center"
-                      }}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
-
-                  <button
-                    onClick={() => setQueuePage((p) => Math.min(p + 1, totalQueuePages))}
-                    disabled={safeQueuePage >= totalQueuePages}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: "9999px",
-                      border: "1px solid #D4D4D8",
-                      backgroundColor: safeQueuePage >= totalQueuePages ? "#F4F4F5" : "#FFFFFF",
-                      color: safeQueuePage >= totalQueuePages ? "#A1A1AA" : "#09090B",
-                      fontWeight: 600,
-                      fontSize: "0.775rem",
-                      cursor: safeQueuePage >= totalQueuePages ? "not-allowed" : "pointer"
-                    }}
-                  >
-                    Next →
-                  </button>
-                </div>
+                <button
+                  onClick={() => setQueuePage((p) => Math.min(p + 1, totalQueuePages))}
+                  disabled={safeQueuePage >= totalQueuePages}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
+                    border: "1px solid #D4D4D8",
+                    backgroundColor: safeQueuePage >= totalQueuePages ? "#F4F4F5" : "#FFFFFF",
+                    color: safeQueuePage >= totalQueuePages ? "#A1A1AA" : "#09090B",
+                    fontWeight: 600,
+                    fontSize: "0.775rem",
+                    cursor: safeQueuePage >= totalQueuePages ? "not-allowed" : "pointer"
+                  }}
+                >
+                  Next →
+                </button>
               </div>
             </div>
           </div>
@@ -1291,7 +1492,8 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               </button>
             </div>
 
-            <div className="responsive-table-wrapper" style={{ backgroundColor: "#FFFFFF", borderRadius: "20px", border: "1px solid #E4E4E7", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02)" }}>
+            {/* DESKTOP TABLE */}
+            <div className="staff-desktop-table responsive-table-wrapper" style={{ backgroundColor: "#FFFFFF", borderRadius: "20px", border: "1px solid #E4E4E7", boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02)" }}>
               <table style={{ width: "100%", borderCollapse: "collapse", textAlign: "left" }}>
                 <thead>
                   <tr style={{ backgroundColor: "#FAF9F6", borderBottom: "1px solid #E4E4E7", color: "#71717A", fontSize: "0.775rem", textTransform: "uppercase", letterSpacing: "0.05em" }}>
@@ -1391,82 +1593,167 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   )}
                 </tbody>
               </table>
+            </div>
 
-              {/* PAGINATION TOOLBAR */}
-              <div style={{
-                padding: "14px 20px",
-                backgroundColor: "#FAF9F6",
-                borderTop: "1px solid #E4E4E7",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                flexWrap: "wrap",
-                gap: "12px",
-                fontSize: "0.825rem",
-                color: "#71717A"
-              }}>
-                <div>
-                  Showing {filteredDocs.length === 0 ? 0 : (safeRegistryPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeRegistryPage * ITEMS_PER_PAGE, filteredDocs.length)} of {filteredDocs.length} entries
+            {/* MOBILE CARDS VIEW */}
+            <div className="staff-mobile-cards staff-mobile-only" style={{ display: "flex", flexDirection: "column", gap: "16px", marginTop: "14px", marginBottom: "16px" }}>
+              {paginatedRegistryDocs.length === 0 ? (
+                <div style={{ backgroundColor: "#FFFFFF", padding: "24px 16px", borderRadius: "16px", textAlign: "center", color: "#71717A", fontSize: "0.875rem" }}>
+                  No clearance registry records found matching your filters.
                 </div>
+              ) : (
+                paginatedRegistryDocs.map((doc) => {
+                  const isReleased = doc.status.includes("Printed") || doc.status.includes("Released");
+                  return (
+                    <div key={doc.id} className="staff-card-item" onClick={() => handleOpenDocumentSplitView(doc)}>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
+                        <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "0.85rem", color: "#09090B" }}>{doc.id}</span>
+                        <span style={{
+                          padding: "4px 12px",
+                          borderRadius: "9999px",
+                          fontSize: "0.725rem",
+                          fontWeight: 800,
+                          backgroundColor: isReleased ? "#ECFDF5" : "#FEF3C7",
+                          color: isReleased ? "#065F46" : "#D97706"
+                        }}>
+                          {doc.status}
+                        </span>
+                      </div>
+                      <div>
+                        <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#09090B", lineHeight: "1.25" }}>{doc.fullName}</div>
+                        <div style={{ fontSize: "0.825rem", color: "#71717A", marginTop: "4px" }}>{doc.documentType} • {doc.purpose}</div>
+                        <div style={{ fontSize: "0.775rem", color: "#A1A1AA", marginTop: "4px" }}>Requested: {doc.dateRequested}</div>
+                      </div>
+                      <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleOpenDocumentSplitView(doc);
+                          }}
+                          style={{
+                            flex: 1,
+                            minHeight: "44px",
+                            padding: "8px 16px",
+                            backgroundColor: "#09090B",
+                            color: "#FFFFFF",
+                            border: "none",
+                            borderRadius: "9999px",
+                            fontWeight: 700,
+                            fontSize: "0.825rem",
+                            cursor: "pointer"
+                          }}
+                        >
+                          Inspect / Edit Record
+                        </button>
+                        <button
+                          type="button"
+                          title="Delete Document"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setDocToDelete(doc);
+                            setDeleteConfirmNameInput("");
+                          }}
+                          style={{
+                            padding: "8px 14px",
+                            backgroundColor: "#FEF2F2",
+                            color: "#DC2626",
+                            border: "1px solid #FCA5A5",
+                            borderRadius: "9999px",
+                            cursor: "pointer",
+                            display: "inline-flex",
+                            alignItems: "center",
+                            justifyContent: "center",
+                            minHeight: "44px"
+                          }}
+                        >
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                            <polyline points="3 6 5 6 21 6"/>
+                            <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                          </svg>
+                        </button>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
 
-                <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+            {/* PAGINATION TOOLBAR */}
+            <div style={{
+              padding: "14px 20px",
+              backgroundColor: "#FFFFFF",
+              borderRadius: "16px",
+              border: "1px solid #E4E4E7",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: "12px",
+              fontSize: "0.825rem",
+              color: "#71717A"
+            }}>
+              <div>
+                Showing {filteredDocs.length === 0 ? 0 : (safeRegistryPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeRegistryPage * ITEMS_PER_PAGE, filteredDocs.length)} of {filteredDocs.length} entries
+              </div>
+
+              <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                <button
+                  onClick={() => setRegistryPage((p) => Math.max(p - 1, 1))}
+                  disabled={safeRegistryPage === 1}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
+                    border: "1px solid #D4D4D8",
+                    backgroundColor: safeRegistryPage === 1 ? "#F4F4F5" : "#FFFFFF",
+                    color: safeRegistryPage === 1 ? "#A1A1AA" : "#09090B",
+                    fontWeight: 600,
+                    fontSize: "0.775rem",
+                    cursor: safeRegistryPage === 1 ? "not-allowed" : "pointer"
+                  }}
+                >
+                  ← Prev
+                </button>
+
+                {Array.from({ length: totalRegistryPages }, (_, i) => i + 1).map((pageNum) => (
                   <button
-                    onClick={() => setRegistryPage((p) => Math.max(p - 1, 1))}
-                    disabled={safeRegistryPage === 1}
+                    key={pageNum}
+                    onClick={() => setRegistryPage(pageNum)}
                     style={{
-                      padding: "5px 12px",
-                      borderRadius: "9999px",
-                      border: "1px solid #D4D4D8",
-                      backgroundColor: safeRegistryPage === 1 ? "#F4F4F5" : "#FFFFFF",
-                      color: safeRegistryPage === 1 ? "#A1A1AA" : "#09090B",
-                      fontWeight: 600,
+                      width: "28px",
+                      height: "28px",
+                      borderRadius: "50%",
+                      border: pageNum === safeRegistryPage ? "none" : "1px solid #E4E4E7",
+                      backgroundColor: pageNum === safeRegistryPage ? "#09090B" : "#FFFFFF",
+                      color: pageNum === safeRegistryPage ? "#FFFFFF" : "#09090B",
+                      fontWeight: 700,
                       fontSize: "0.775rem",
-                      cursor: safeRegistryPage === 1 ? "not-allowed" : "pointer"
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center"
                     }}
                   >
-                    ← Prev
+                    {pageNum}
                   </button>
+                ))}
 
-                  {Array.from({ length: totalRegistryPages }, (_, i) => i + 1).map((pageNum) => (
-                    <button
-                      key={pageNum}
-                      onClick={() => setRegistryPage(pageNum)}
-                      style={{
-                        width: "28px",
-                        height: "28px",
-                        borderRadius: "50%",
-                        border: pageNum === safeRegistryPage ? "none" : "1px solid #E4E4E7",
-                        backgroundColor: pageNum === safeRegistryPage ? "#09090B" : "#FFFFFF",
-                        color: pageNum === safeRegistryPage ? "#FFFFFF" : "#09090B",
-                        fontWeight: 700,
-                        fontSize: "0.775rem",
-                        cursor: "pointer",
-                        display: "inline-flex",
-                        alignItems: "center",
-                        justifyContent: "center"
-                      }}
-                    >
-                      {pageNum}
-                    </button>
-                  ))}
-
-                  <button
-                    onClick={() => setRegistryPage((p) => Math.min(p + 1, totalRegistryPages))}
-                    disabled={safeRegistryPage >= totalRegistryPages}
-                    style={{
-                      padding: "5px 12px",
-                      borderRadius: "9999px",
-                      border: "1px solid #D4D4D8",
-                      backgroundColor: safeRegistryPage >= totalRegistryPages ? "#F4F4F5" : "#FFFFFF",
-                      color: safeRegistryPage >= totalRegistryPages ? "#A1A1AA" : "#09090B",
-                      fontWeight: 600,
-                      fontSize: "0.775rem",
-                      cursor: safeRegistryPage >= totalRegistryPages ? "not-allowed" : "pointer"
-                    }}
-                  >
-                    Next →
-                  </button>
-                </div>
+                <button
+                  onClick={() => setRegistryPage((p) => Math.min(p + 1, totalRegistryPages))}
+                  disabled={safeRegistryPage >= totalRegistryPages}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
+                    border: "1px solid #D4D4D8",
+                    backgroundColor: safeRegistryPage >= totalRegistryPages ? "#F4F4F5" : "#FFFFFF",
+                    color: safeRegistryPage >= totalRegistryPages ? "#A1A1AA" : "#09090B",
+                    fontWeight: 600,
+                    fontSize: "0.775rem",
+                    cursor: safeRegistryPage >= totalRegistryPages ? "not-allowed" : "pointer"
+                  }}
+                >
+                  Next →
+                </button>
               </div>
             </div>
           </div>
@@ -1649,8 +1936,8 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
         {/* 5. CLEARANCE DOCUMENT SPLIT VIEW (WITH BACK BUTTON) */}
         {activeNav === "create" && (
           <div>
-            {/* TOP NAVIGATION BACK BUTTON */}
-            <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+            {/* TOP NAVIGATION BACK BUTTON & DOC BADGE */}
+            <div style={{ marginBottom: "14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
               <button
                 type="button"
                 onClick={() => setActiveNav("queue")}
@@ -1666,6 +1953,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   display: "inline-flex",
                   alignItems: "center",
                   gap: "6px",
+                  minHeight: "44px",
                   boxShadow: "0 1px 3px rgba(0,0,0,0.03)"
                 }}
               >
@@ -1673,54 +1961,55 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               </button>
 
               {inspectedDoc && (
-                <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
-                  <span style={{ fontSize: "0.85rem", color: "#71717A", fontWeight: 600 }}>
-                    Editing Document: <strong style={{ color: "#09090B", fontFamily: "monospace" }}>{inspectedDoc.id}</strong>
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setDocToDelete(inspectedDoc);
-                      setDeleteConfirmNameInput("");
-                    }}
-                    style={{
-                      padding: "6px 14px",
-                      borderRadius: "9999px",
-                      backgroundColor: "#FEF2F2",
-                      color: "#DC2626",
-                      border: "1px solid #FCA5A5",
-                      fontWeight: 700,
-                      fontSize: "0.775rem",
-                      cursor: "pointer",
-                      display: "inline-flex",
-                      alignItems: "center",
-                      gap: "4px"
-                    }}
-                  >
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
-                      <polyline points="3 6 5 6 21 6"/>
-                      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
-                    </svg>
-                    Delete Record
-                  </button>
-                </div>
+                <span style={{ fontSize: "0.825rem", color: "#71717A", fontWeight: 600 }}>
+                  Editing: <strong style={{ color: "#09090B", fontFamily: "monospace" }}>{inspectedDoc.id}</strong>
+                </span>
               )}
             </div>
 
-            <div style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: "28px", alignItems: "flex-start" }}>
+            {/* MOBILE SEGMENTED TOGGLE (SVG Vector Icons Only - No Emojis) */}
+            <div className="staff-segmented-control staff-mobile-flex-only">
+              <button
+                type="button"
+                className={mobileEditorTab === "form" ? "active" : ""}
+                onClick={() => setMobileEditorTab("form")}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/>
+                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Form Controls
+              </button>
+              <button
+                type="button"
+                className={mobileEditorTab === "preview" ? "active" : ""}
+                onClick={() => setMobileEditorTab("preview")}
+              >
+                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                  <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                  <polyline points="14 2 14 8 20 8"/>
+                </svg>
+                View Certificate
+              </button>
+            </div>
+
+            <div className="staff-editor-grid" style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: "28px", alignItems: "flex-start" }}>
               {/* LEFT FORM COLUMN: EMBEDDED EditorPanel */}
-              <div style={{
-                backgroundColor: "#FFFFFF",
-                padding: "24px",
-                borderRadius: "24px",
-                border: "1px solid #E4E4E7",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
-                display: "flex",
-                flexDirection: "column",
-                gap: "16px",
-                maxHeight: "calc(100vh - 170px)",
-                overflowY: "auto"
-              }}>
+              <div
+                className={mobileEditorTab === "preview" ? "staff-desktop-only" : ""}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  padding: "20px",
+                  borderRadius: "24px",
+                  border: "1px solid #E4E4E7",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "16px",
+                  maxHeight: "calc(100vh - 170px)",
+                  overflowY: "auto"
+                }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F4F4F5", paddingBottom: "12px" }}>
                   <div>
                     <span style={{ fontSize: "0.6875rem", fontWeight: "800", color: "#D97706", backgroundColor: "#FEF3C7", padding: "2px 8px", borderRadius: "9999px", textTransform: "uppercase" }}>
@@ -1764,32 +2053,68 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                     fontWeight: 800,
                     fontSize: "0.9rem",
                     cursor: "pointer",
-                    marginTop: "12px",
+                    marginTop: "8px",
                     boxShadow: "0 4px 14px rgba(9, 9, 11, 0.15)",
-                    width: "100%"
+                    width: "100%",
+                    minHeight: "46px"
                   }}
                 >
                   Print & Release Official Clearance →
                 </button>
+
+                {/* DANGER ZONE: SAFE PLACEMENT FOR DELETE RECORD BUTTON */}
+                {inspectedDoc && (
+                  <div style={{ paddingTop: "12px", borderTop: "1px solid #F4F4F5", marginTop: "8px" }}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setDocToDelete(inspectedDoc);
+                        setDeleteConfirmNameInput("");
+                      }}
+                      style={{
+                        padding: "8px 16px",
+                        borderRadius: "9999px",
+                        backgroundColor: "#FEF2F2",
+                        color: "#DC2626",
+                        border: "1px solid #FCA5A5",
+                        fontWeight: 700,
+                        fontSize: "0.775rem",
+                        cursor: "pointer",
+                        display: "inline-flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        gap: "6px",
+                        width: "100%",
+                        minHeight: "44px"
+                      }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                        <polyline points="3 6 5 6 21 6"/>
+                        <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/>
+                      </svg>
+                      Delete Record {inspectedDoc.id}
+                    </button>
+                  </div>
+                )}
               </div>
 
-              {/* RIGHT COLUMN: FULLY VERTICALLY SCROLLABLE LIVE PREVIEW PAGE */}
-              <div style={{
-                backgroundColor: "#FFFFFF",
-                borderRadius: "24px",
-                border: "1px solid #E4E4E7",
-                padding: "24px",
-                height: "calc(100vh - 170px)",
-                boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
-                display: "flex",
-                flexDirection: "column"
-              }}>
+              {/* RIGHT COLUMN: LIVE PREVIEW PAGE */}
+              <div
+                className={mobileEditorTab === "form" ? "staff-desktop-only" : ""}
+                style={{
+                  backgroundColor: "#FFFFFF",
+                  borderRadius: "24px",
+                  border: "1px solid #E4E4E7",
+                  padding: "20px",
+                  height: "calc(100vh - 170px)",
+                  boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
+                  display: "flex",
+                  flexDirection: "column"
+                }}
+              >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexShrink: 0 }}>
-                  <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#D97706", backgroundColor: "#FEF3C7", padding: "4px 12px", borderRadius: "9999px" }}>
+                  <span style={{ fontSize: "0.725rem", fontWeight: 800, color: "#D97706", backgroundColor: "#FEF3C7", padding: "4px 12px", borderRadius: "9999px" }}>
                     LIVE CLEARANCE PREVIEW (8.5" x 13" OFFICIAL RTC CERTIFICATE)
-                  </span>
-                  <span style={{ fontSize: "0.8rem", color: "#71717A", fontWeight: 600 }}>
-                    Scrollable Document View
                   </span>
                 </div>
 
@@ -1808,6 +2133,27 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                     photoSrc={photoSrc}
                     signatureSrc={signatureSrc}
                   />
+                </div>
+
+                <div className="staff-mobile-only" style={{ marginTop: "12px" }}>
+                  <button
+                    type="button"
+                    onClick={handleCreateDirectDoc}
+                    style={{
+                      padding: "14px 24px",
+                      backgroundColor: "#09090B",
+                      color: "#FFFFFF",
+                      border: "none",
+                      borderRadius: "9999px",
+                      fontWeight: 800,
+                      fontSize: "0.9rem",
+                      cursor: "pointer",
+                      width: "100%",
+                      minHeight: "48px"
+                    }}
+                  >
+                    Print & Release Official Clearance →
+                  </button>
                 </div>
               </div>
             </div>
@@ -1978,6 +2324,77 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
           </div>
         </div>
       )}
+
+      {/* FIXED MOBILE BOTTOM NAVIGATION BAR (SVG VECTOR ICONS ONLY) */}
+      <nav className="staff-mobile-bottom-nav">
+        <button
+          type="button"
+          className={`staff-bottom-tab-btn ${activeNav === "dashboard" ? "active" : ""}`}
+          onClick={() => setActiveNav("dashboard")}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <rect x="3" y="3" width="7" height="7"/>
+            <rect x="14" y="3" width="7" height="7"/>
+            <rect x="14" y="14" width="7" height="7"/>
+            <rect x="3" y="14" width="7" height="7"/>
+          </svg>
+          <span>Dash</span>
+        </button>
+
+        <button
+          type="button"
+          className={`staff-bottom-tab-btn ${activeNav === "queue" ? "active" : ""}`}
+          onClick={() => setActiveNav("queue")}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <path d="M12 8v4l3 3"/>
+            <circle cx="12" cy="12" r="9"/>
+          </svg>
+          <span>Queue</span>
+          {pendingCount > 0 && (
+            <span className="staff-bottom-tab-badge">{pendingCount}</span>
+          )}
+        </button>
+
+        <button
+          type="button"
+          className={`staff-bottom-tab-btn ${activeNav === "registry" ? "active" : ""}`}
+          onClick={() => setActiveNav("registry")}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+          </svg>
+          <span>Registry</span>
+        </button>
+
+        <button
+          type="button"
+          className={`staff-bottom-tab-btn ${activeNav === "scanner" ? "active" : ""}`}
+          onClick={() => setActiveNav("scanner")}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <rect x="7" y="7" width="10" height="10" rx="1"/>
+            <path d="M3 7V5a2 2 0 0 1 2-2h2"/>
+            <path d="M17 3h2a2 2 0 0 1 2 2v2"/>
+            <path d="M17 21h2a2 2 0 0 0 2-2v-2"/>
+            <path d="M7 21H5a2 2 0 0 1-2-2v-2"/>
+          </svg>
+          <span>Scan</span>
+        </button>
+
+        <button
+          type="button"
+          className={`staff-bottom-tab-btn ${activeNav === "create" ? "active" : ""}`}
+          onClick={handleOpenBlankSplitView}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <line x1="12" y1="5" x2="12" y2="19"/>
+            <line x1="5" y1="12" x2="19" y2="12"/>
+          </svg>
+          <span>New</span>
+        </button>
+      </nav>
     </div>
   );
 }

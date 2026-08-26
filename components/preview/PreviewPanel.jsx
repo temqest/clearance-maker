@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import styles from "./PreviewPanel.module.css";
 
 const TEMPLATE_URL = "/assets/rtc-clearance-with-logo/RTCClearanceWithLogo.html";
@@ -283,10 +283,49 @@ export default function PreviewPanel({
   formData,
   photoSrc,
   signatureSrc,
-  onRenderedTemplateChange
+  onRenderedTemplateChange,
+  disableAutoFit = false
 }) {
   const [templateHtml, setTemplateHtml] = useState("");
   const [renderedTemplate, setRenderedTemplate] = useState("");
+  const containerRef = useRef(null);
+  const [scale, setScale] = useState(1);
+
+  useEffect(() => {
+    if (disableAutoFit || !containerRef.current) {
+      setScale(1);
+      return;
+    }
+
+    const updateScale = () => {
+      if (!containerRef.current) return;
+      const containerWidth = containerRef.current.clientWidth;
+      if (containerWidth > 0 && containerWidth < 830) {
+        const targetScale = Math.min(1, Math.max(0.35, (containerWidth - 12) / 816));
+        setScale(targetScale);
+      } else {
+        setScale(1);
+      }
+    };
+
+    updateScale();
+
+    let resizeObserver;
+    if (typeof ResizeObserver !== "undefined") {
+      resizeObserver = new ResizeObserver(updateScale);
+      resizeObserver.observe(containerRef.current);
+    } else {
+      window.addEventListener("resize", updateScale);
+    }
+
+    return () => {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      } else {
+        window.removeEventListener("resize", updateScale);
+      }
+    };
+  }, [disableAutoFit]);
 
   useEffect(() => {
     let active = true;
@@ -790,12 +829,38 @@ export default function PreviewPanel({
   }, [renderedTemplate, onRenderedTemplateChange]);
 
   return (
-    <section className={styles.previewPanel}>
-      <iframe
-        title="RTC clearance preview"
-        className={styles.templateFrame}
-        srcDoc={renderedTemplate}
-      />
+    <section className={styles.previewPanel} ref={containerRef}>
+      {scale < 1 ? (
+        <div
+          style={{
+            width: `${Math.round(816 * scale)}px`,
+            height: `${Math.round(1248 * scale)}px`,
+            position: "relative",
+            margin: "0 auto",
+            flexShrink: 0
+          }}
+        >
+          <iframe
+            title="RTC clearance preview"
+            className={styles.templateFrame}
+            srcDoc={renderedTemplate}
+            style={{
+              transform: `scale(${scale})`,
+              transformOrigin: "top left",
+              position: "absolute",
+              top: 0,
+              left: 0,
+              margin: 0
+            }}
+          />
+        </div>
+      ) : (
+        <iframe
+          title="RTC clearance preview"
+          className={styles.templateFrame}
+          srcDoc={renderedTemplate}
+        />
+      )}
     </section>
   );
 }

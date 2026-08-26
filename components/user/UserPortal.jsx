@@ -21,6 +21,9 @@ export default function UserPortal() {
   const receiptVideoRef = useRef(null);
   const [photoSrc, setPhotoSrc] = useState("");
   const [realQrUrl, setRealQrUrl] = useState("");
+  const [isFullscreenPreviewOpen, setIsFullscreenPreviewOpen] = useState(false);
+  const [fullscreenZoomMode, setFullscreenZoomMode] = useState("fit");
+  const stepContainerRef = useRef(null);
 
   useEffect(() => {
     if (userDocument?.id) {
@@ -58,10 +61,12 @@ export default function UserPortal() {
 
       const savedForm = localStorage.getItem("clearance_user_form_data");
       if (savedForm) setFormData(JSON.parse(savedForm));
-    } catch (err) {
-      console.warn("Error restoring user portal state", err);
+    } catch (e) {
+      console.error("Failed restoring saved portal state:", e);
     }
   }, []);
+
+
 
   // Save changes to localStorage
   useEffect(() => {
@@ -450,6 +455,21 @@ export default function UserPortal() {
 
   const currentStep = !userPayment ? 1 : !userDocument ? (isPreviewingDoc ? 3 : 2) : 4;
 
+  // Auto-scroll viewable area to the top of the step card when moving next or back
+  useEffect(() => {
+    if (stepContainerRef.current) {
+      const element = stepContainerRef.current;
+      const rect = element.getBoundingClientRect();
+      const yOffset = -24; // Margin offset below top navbar
+      const targetY = window.pageYOffset + rect.top + yOffset;
+      
+      window.scrollTo({
+        top: Math.max(0, targetY),
+        behavior: "smooth"
+      });
+    }
+  }, [currentStep]);
+
   const formattedFullName = formData.lastName.trim()
     ? `${formData.lastName.trim().toUpperCase()}, ${formData.firstName.trim().toUpperCase()}${formData.middleName.trim() ? " " + formData.middleName.trim().toUpperCase() : ""}`
     : "DELA CRUZ, JUAN PEDRO";
@@ -479,7 +499,7 @@ export default function UserPortal() {
   return (
     <div style={{ maxWidth: "920px", margin: "40px auto", padding: "0 24px 80px" }}>
       {/* STEP COUNTER & PROGRESS BAR */}
-      <div style={{
+      <div ref={stepContainerRef} style={{
         backgroundColor: "#FFFFFF",
         borderRadius: "20px",
         padding: "20px 24px",
@@ -614,7 +634,7 @@ export default function UserPortal() {
 
       {/* STEP 1: PAYMENT VERIFICATION */}
       {!userPayment ? (
-        <div style={{
+        <div className="portal-step-card" style={{
           backgroundColor: "#FFFFFF",
           borderRadius: "20px",
           padding: "32px",
@@ -779,7 +799,7 @@ export default function UserPortal() {
 
       {/* STEP 2: FILL UP DOCUMENT FORM (Active only when payment verified, not previewing, and document not submitted) */}
       {userPayment && !isPreviewingDoc && !userDocument && (
-        <div style={{
+        <div className="portal-step-card" style={{
           backgroundColor: "#FFFFFF",
           borderRadius: "20px",
           padding: "32px",
@@ -831,7 +851,7 @@ export default function UserPortal() {
           <form onSubmit={handleSubmitDoc} style={{ display: "flex", flexDirection: "column", gap: "28px" }}>
             
             {/* SECTION 1: CLEARANCE REQUEST INFORMATION */}
-            <div style={{
+            <div className="portal-form-section" style={{
               backgroundColor: "#FAF9F6",
               border: "1px solid #E4E4E7",
               borderRadius: "16px",
@@ -855,7 +875,7 @@ export default function UserPortal() {
                 </h3>
               </div>
 
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
+              <div className="portal-form-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 700, color: "#09090B", marginBottom: "6px" }}>
                     Document Type <span style={{ color: "#DC2626" }}>*</span>
@@ -907,7 +927,7 @@ export default function UserPortal() {
             </div>
 
             {/* SECTION 2: PERSONAL IDENTITY & PHOTO */}
-            <div style={{
+            <div className="portal-form-section" style={{
               backgroundColor: "#FAF9F6",
               border: "1px solid #E4E4E7",
               borderRadius: "16px",
@@ -1055,7 +1075,7 @@ export default function UserPortal() {
               </div>
 
               {/* SPLIT NAME FIELDS & CIVIL STATUS */}
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
+              <div className="portal-form-grid" style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: "20px" }}>
                 <div>
                   <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 700, color: "#09090B", marginBottom: "6px" }}>
                     Last Name (Apelyido) <span style={{ color: "#DC2626" }}>*</span>
@@ -1266,7 +1286,7 @@ export default function UserPortal() {
             </div>
 
             {/* SECTION 3: LOCATION & RESIDENCE */}
-            <div style={{
+            <div className="portal-form-section" style={{
               backgroundColor: "#FAF9F6",
               border: "1px solid #E4E4E7",
               borderRadius: "16px",
@@ -1360,7 +1380,7 @@ export default function UserPortal() {
 
       {/* STEP 3: DIGITAL DOCUMENT CERTIFICATE PREVIEW */}
       {userPayment && isPreviewingDoc && !userDocument && (
-        <div style={{
+        <div className="portal-step-card" style={{
           backgroundColor: "#FFFFFF",
           borderRadius: "20px",
           padding: "32px",
@@ -1413,12 +1433,68 @@ export default function UserPortal() {
             Review your generated official 8.5x13 Regional Trial Court clearance certificate below before confirming your application.
           </p>
 
+          {/* ACTION TOOLBAR ABOVE DOCUMENT PREVIEW */}
+          <div style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            marginBottom: "14px",
+            flexWrap: "wrap",
+            gap: "12px"
+          }}>
+            <span style={{
+              fontSize: "0.85rem",
+              fontWeight: 700,
+              color: "#52525B",
+              display: "inline-flex",
+              alignItems: "center",
+              justifyContent: "center",
+              gap: "6px",
+              textAlign: "center"
+            }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/>
+                <polyline points="14 2 14 8 20 8"/>
+              </svg>
+              Official 8.5×13 Court Certificate Draft
+            </span>
+
+            <button
+              type="button"
+              onClick={() => setIsFullscreenPreviewOpen(true)}
+              style={{
+                padding: "8px 18px",
+                borderRadius: "9999px",
+                backgroundColor: "#09090B",
+                color: "#FFFFFF",
+                fontWeight: 700,
+                fontSize: "0.825rem",
+                border: "none",
+                cursor: "pointer",
+                display: "inline-flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "6px",
+                boxShadow: "0 2px 8px rgba(9, 9, 11, 0.15)",
+                textAlign: "center"
+              }}
+            >
+              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                <polyline points="15 3 21 3 21 9"/>
+                <polyline points="9 21 3 21 3 15"/>
+                <line x1="21" y1="3" x2="14" y2="10"/>
+                <line x1="3" y1="21" x2="10" y2="14"/>
+              </svg>
+              <span>Full Screen Document View</span>
+            </button>
+          </div>
+
           {/* DOCUMENT PREVIEW WRAPPER */}
           <div style={{
             backgroundColor: "#FAF9F6",
             border: "1px solid #E4E4E7",
             borderRadius: "20px",
-            padding: "24px",
+            padding: "16px",
             marginBottom: "28px",
             maxHeight: "650px",
             overflowY: "auto",
@@ -1474,7 +1550,7 @@ export default function UserPortal() {
 
       {/* STEP 3: CREATED DOCUMENT & QR CODE FOR STAFF */}
       {userDocument && (
-        <div style={{
+        <div className="portal-step-card" style={{
           backgroundColor: "#FFFFFF",
           borderRadius: "24px",
           padding: "36px",
@@ -1918,6 +1994,122 @@ export default function UserPortal() {
               >
                 Close
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* FULL-SCREEN DOCUMENT PREVIEW OVERLAY MODAL */}
+      {isFullscreenPreviewOpen && (
+        <div style={{
+          position: "fixed",
+          inset: 0,
+          zIndex: 99999,
+          backgroundColor: "rgba(9, 9, 11, 0.92)",
+          backdropFilter: "blur(8px)",
+          display: "flex",
+          flexDirection: "column"
+        }}>
+          {/* Modal Header */}
+          <div style={{
+            padding: "14px 20px",
+            backgroundColor: "#09090B",
+            borderBottom: "1px solid #27272A",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+            color: "#FFFFFF",
+            flexWrap: "wrap",
+            gap: "10px"
+          }}>
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              <span style={{
+                backgroundColor: "#27272A",
+                color: "#FAF9F6",
+                padding: "4px 10px",
+                borderRadius: "6px",
+                fontSize: "0.75rem",
+                fontWeight: 800
+              }}>8.5 × 13 LEGAL DRAFT</span>
+              <h3 style={{ fontSize: "1.05rem", fontWeight: 800, margin: 0, color: "#FFFFFF" }}>
+                Full Court Certificate View
+              </h3>
+            </div>
+
+            <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+              {/* Zoom mode toggle: Fit Screen vs Actual 100% */}
+              <div style={{ display: "flex", backgroundColor: "#18181B", padding: "3px", borderRadius: "9999px", border: "1px solid #27272A" }}>
+                <button
+                  type="button"
+                  onClick={() => setFullscreenZoomMode("fit")}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
+                    border: "none",
+                    backgroundColor: fullscreenZoomMode === "fit" ? "#FFFFFF" : "transparent",
+                    color: fullscreenZoomMode === "fit" ? "#09090B" : "#A1A1AA",
+                    fontWeight: 700,
+                    fontSize: "0.775rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  Fit Screen
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFullscreenZoomMode("full")}
+                  style={{
+                    padding: "5px 12px",
+                    borderRadius: "9999px",
+                    border: "none",
+                    backgroundColor: fullscreenZoomMode === "full" ? "#FFFFFF" : "transparent",
+                    color: fullscreenZoomMode === "full" ? "#09090B" : "#A1A1AA",
+                    fontWeight: 700,
+                    fontSize: "0.775rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  100% Size
+                </button>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setIsFullscreenPreviewOpen(false)}
+                style={{
+                  padding: "8px 18px",
+                  borderRadius: "9999px",
+                  backgroundColor: "#FFFFFF",
+                  color: "#09090B",
+                  fontWeight: 800,
+                  fontSize: "0.85rem",
+                  border: "none",
+                  cursor: "pointer",
+                  display: "inline-flex",
+                  alignItems: "center",
+                  gap: "6px"
+                }}
+              >
+                ✕ Close
+              </button>
+            </div>
+          </div>
+
+          {/* Modal Main Document Container */}
+          <div style={{
+            flex: 1,
+            overflowY: "auto",
+            padding: "16px 12px",
+            display: "flex",
+            justifyContent: "center",
+            alignItems: "flex-start"
+          }}>
+            <div style={{ width: "100%", maxWidth: "860px" }}>
+              <PreviewPanel
+                formData={previewData}
+                photoSrc={photoSrc}
+                disableAutoFit={fullscreenZoomMode === "full"}
+              />
             </div>
           </div>
         </div>

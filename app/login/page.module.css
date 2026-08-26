@@ -193,15 +193,14 @@
 
   .content {
     grid-template-columns: 1fr;
+    min-height: auto;
   }
 
   .infoPanel {
-    border-right: 0;
-    border-bottom: 1px solid #E4E4E7;
-    padding: 28px;
+    display: none !important;
   }
 
   .formPanel {
-    padding: 28px;
+    padding: 24px 20px;
   }
 }

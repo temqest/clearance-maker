@@ -6,6 +6,25 @@
   align-items: flex-start;
   justify-content: center;
   padding: 20px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+@media (max-width: 639px) {
+  .previewPanel {
+    padding: 12px 4px !important;
+    overflow-x: hidden !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: flex-start !important;
+    width: 100% !important;
+  }
+  .templateFrame,
+  .doc {
+    transform: scale(0.42);
+    transform-origin: top center;
+    margin-bottom: -720px !important;
+  }
 }
 
 .templateFrame {

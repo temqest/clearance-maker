@@ -197,7 +197,8 @@ function LandingPageContent() {
           {/* Brand Mark Text */}
           <div className="brand-block">
             <h1 className="brand-title">
-              {curr.portalTitle}
+              <span className="brand-text-full">{curr.portalTitle}</span>
+              <span className="brand-text-short">RTC</span>
             </h1>
             <span className="brand-subtitle">
               {curr.portalSubtitle}
