@@ -36,16 +36,18 @@ export default function RoleSelector() {
 
         {/* Back to Home Link for Portal Users */}
         <Link href="/" style={{
-          padding: "8px 18px",
+          padding: "6px 14px",
           borderRadius: "9999px",
           backgroundColor: "#09090B",
           color: "#FFFFFF",
           fontWeight: 700,
-          fontSize: "0.825rem",
+          fontSize: "0.8rem",
           textDecoration: "none",
           display: "inline-flex",
           alignItems: "center",
           gap: "6px",
+          whiteSpace: "nowrap",
+          flexShrink: 0,
           boxShadow: "0 4px 12px rgba(9, 9, 11, 0.15)"
         }}>
           ← Back to Home

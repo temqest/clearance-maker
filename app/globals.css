@@ -691,19 +691,19 @@ button, input, select, textarea {
   background-color: #E4E4E7;
   border-radius: 9999px;
   padding: 3px;
-  margin-bottom: 14px;
+  margin-bottom: 12px;
 }
 
 .staff-segmented-control button {
   flex: 1;
-  padding: 9px 12px;
+  padding: 6px 12px;
   border: none;
   border-radius: 9999px;
-  font-size: 0.825rem;
+  font-size: 0.775rem;
   font-weight: 700;
   cursor: pointer;
   transition: all 0.15s ease;
-  min-height: 44px;
+  min-height: 36px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -719,6 +719,30 @@ button, input, select, textarea {
 .staff-segmented-control button:not(.active) {
   background-color: transparent;
   color: #52525B;
+}
+
+@media (max-width: 639px) {
+  .staff-btn-back {
+    padding: 6px 12px !important;
+    min-height: 36px !important;
+    font-size: 0.775rem !important;
+  }
+
+  .staff-btn-print-top {
+    padding: 6px 14px !important;
+    min-height: 36px !important;
+    font-size: 0.775rem !important;
+  }
+
+  .staff-badge-preview {
+    font-size: 0.675rem !important;
+    padding: 3px 8px !important;
+  }
+}
+
+/* Scroll Margin Top for form fields to account for sticky navigation header */
+input, select, textarea, .portal-form-section, [data-scroll-target] {
+  scroll-margin-top: 100px !important;
 }
 
 /* Responsive Table Wrapper */

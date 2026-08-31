@@ -8,16 +8,40 @@ import { defaultClearanceData } from "../../lib/defaultClearanceData";
 import EditorPanel from "../editor/EditorPanel";
 import PreviewPanel from "../preview/PreviewPanel";
 import { decodeQrFromImageData, decodeQrFromImageFile } from "../../lib/qrScannerHelper";
+import { formatEnglishDate } from "../../lib/formatters";
 
 export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   const router = useRouter();
-  const { documents, markAsPrinted, createStaffDocument, deleteDocument, lookupDocument } = useMock();
+  const { documents, markAsPrinted, createStaffDocument, updateDocument, deleteDocument, lookupDocument, nextCertNo, updateNextCertNo } = useMock();
 
   // Active sidebar navigation pill
-  const [activeNav, setActiveNav] = useState("dashboard"); // 'dashboard' | 'queue' | 'registry' | 'scanner' | 'create'
+  const [activeNav, setActiveNav] = useState("dashboard"); // 'dashboard' | 'queue' | 'registry' | 'scanner' | 'create' | 'settings'
   const [mobileEditorTab, setMobileEditorTab] = useState("form"); // 'form' | 'preview'
-  const [searchTerm, setSearchTerm] = useState("");
+  // Dashboard filter state
   const [statusFilter, setStatusFilter] = useState("all");
+
+  // Queue tab filter state
+  const [queueSearchTerm, setQueueSearchTerm] = useState("");
+  const [queueStatusFilter, setQueueStatusFilter] = useState("all");
+
+  // Registry tab filter state
+  const [registrySearchTerm, setRegistrySearchTerm] = useState("");
+  const [registryStatusFilter, setRegistryStatusFilter] = useState("all");
+  
+  // Organization settings local state
+  const [certNoInput, setCertNoInput] = useState(String(nextCertNo || 1));
+  const [settingsSavedToast, setSettingsSavedToast] = useState(false);
+
+  useEffect(() => {
+    setCertNoInput(String(nextCertNo || 1));
+  }, [nextCertNo]);
+
+  const handleSaveOrgSettings = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    updateNextCertNo(certNoInput);
+    setSettingsSavedToast(true);
+    setTimeout(() => setSettingsSavedToast(false), 4000);
+  };
   
   // Inspected/edited document
   const [inspectedDoc, setInspectedDoc] = useState(null);
@@ -59,7 +83,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
     setDeleteConfirmNameInput("");
   };
 
-  const effectiveSearch = headerSearchQuery || searchTerm;
+  const effectiveQueueSearch = headerSearchQuery || queueSearchTerm;
 
   // Statistics
   const totalCount = documents.length;
@@ -67,22 +91,55 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   const releasedCount = documents.filter((d) => d.status.includes("Released") || d.status.includes("Printed")).length;
   const totalRevenue = documents.length * 150;
 
-  // Priority Sort: Surface pending/actionable items at the top of the queue
-  const sortedDocs = [...documents].sort((a, b) => {
-    const aIsPending = a.status.includes("Pending") ? 0 : 1;
-    const bIsPending = b.status.includes("Pending") ? 0 : 1;
+  // Priority Sort & Deduplicate: Surface pending items at top with unique keys
+  const uniqueDocsMap = new Map();
+  documents.forEach((doc) => {
+    if (doc && doc.id) {
+      uniqueDocsMap.set(doc.id, doc);
+    }
+  });
+
+  const sortedDocs = Array.from(uniqueDocsMap.values()).sort((a, b) => {
+    const aIsPending = (a.status || "").includes("Pending") ? 0 : 1;
+    const bIsPending = (b.status || "").includes("Pending") ? 0 : 1;
     return aIsPending - bIsPending;
   });
 
-  // Filter documents
+  // Filter Dashboard live queue documents
   const filteredDocs = sortedDocs.filter((doc) => {
     const matchesSearch =
-      doc.fullName.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
-      doc.id.toLowerCase().includes(effectiveSearch.toLowerCase()) ||
-      doc.paymentNo.toLowerCase().includes(effectiveSearch.toLowerCase());
+      doc.fullName.toLowerCase().includes(effectiveQueueSearch.toLowerCase()) ||
+      doc.id.toLowerCase().includes(effectiveQueueSearch.toLowerCase()) ||
+      (doc.paymentNo && doc.paymentNo.toLowerCase().includes(effectiveQueueSearch.toLowerCase()));
 
     if (statusFilter === "pending") return matchesSearch && doc.status.includes("Pending");
     if (statusFilter === "released") return matchesSearch && (doc.status.includes("Released") || doc.status.includes("Printed"));
+    return matchesSearch;
+  });
+
+  // Filter Queue tab documents
+  const filteredQueueDocs = sortedDocs.filter((doc) => {
+    const matchesSearch =
+      doc.fullName.toLowerCase().includes(effectiveQueueSearch.toLowerCase()) ||
+      doc.id.toLowerCase().includes(effectiveQueueSearch.toLowerCase()) ||
+      (doc.paymentNo && doc.paymentNo.toLowerCase().includes(effectiveQueueSearch.toLowerCase()));
+
+    if (queueStatusFilter === "pending") return matchesSearch && doc.status.includes("Pending");
+    if (queueStatusFilter === "released") return matchesSearch && (doc.status.includes("Released") || doc.status.includes("Printed"));
+    return matchesSearch;
+  });
+
+  // Filter Registry tab documents (independent filter & search)
+  const filteredRegistryDocs = sortedDocs.filter((doc) => {
+    const matchesSearch =
+      doc.fullName.toLowerCase().includes(registrySearchTerm.toLowerCase()) ||
+      doc.id.toLowerCase().includes(registrySearchTerm.toLowerCase()) ||
+      (doc.purpose && doc.purpose.toLowerCase().includes(registrySearchTerm.toLowerCase())) ||
+      (doc.documentType && doc.documentType.toLowerCase().includes(registrySearchTerm.toLowerCase())) ||
+      (doc.paymentNo && doc.paymentNo.toLowerCase().includes(registrySearchTerm.toLowerCase()));
+
+    if (registryStatusFilter === "pending") return matchesSearch && doc.status.includes("Pending");
+    if (registryStatusFilter === "released") return matchesSearch && (doc.status.includes("Released") || doc.status.includes("Printed"));
     return matchesSearch;
   });
 
@@ -93,16 +150,19 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
 
   useEffect(() => {
     setQueuePage(1);
+  }, [effectiveQueueSearch, queueStatusFilter]);
+
+  useEffect(() => {
     setRegistryPage(1);
-  }, [effectiveSearch, statusFilter]);
+  }, [registrySearchTerm, registryStatusFilter]);
 
-  const totalQueuePages = Math.ceil(filteredDocs.length / ITEMS_PER_PAGE) || 1;
+  const totalQueuePages = Math.ceil(filteredQueueDocs.length / ITEMS_PER_PAGE) || 1;
   const safeQueuePage = Math.min(queuePage, totalQueuePages);
-  const paginatedQueueDocs = filteredDocs.slice((safeQueuePage - 1) * ITEMS_PER_PAGE, safeQueuePage * ITEMS_PER_PAGE);
+  const paginatedQueueDocs = filteredQueueDocs.slice((safeQueuePage - 1) * ITEMS_PER_PAGE, safeQueuePage * ITEMS_PER_PAGE);
 
-  const totalRegistryPages = Math.ceil(filteredDocs.length / ITEMS_PER_PAGE) || 1;
+  const totalRegistryPages = Math.ceil(filteredRegistryDocs.length / ITEMS_PER_PAGE) || 1;
   const safeRegistryPage = Math.min(registryPage, totalRegistryPages);
-  const paginatedRegistryDocs = filteredDocs.slice((safeRegistryPage - 1) * ITEMS_PER_PAGE, safeRegistryPage * ITEMS_PER_PAGE);
+  const paginatedRegistryDocs = filteredRegistryDocs.slice((safeRegistryPage - 1) * ITEMS_PER_PAGE, safeRegistryPage * ITEMS_PER_PAGE);
 
   // Handle original editor field updates
   const handleFieldChange = (fieldId, value) => {
@@ -115,22 +175,54 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   // Open existing document in split view
   const handleOpenDocumentSplitView = (doc) => {
     setInspectedDoc(doc);
+    const docDate = doc?.dateRequested ? new Date(doc.dateRequested) : new Date();
+    const validDate = isNaN(docDate.getTime()) ? new Date() : docDate;
+    const formattedDate = formatEnglishDate(validDate);
+
     setFormData({
       ...defaultClearanceData,
       fullName: doc.fullName || "",
+      dob: doc.birthDate || doc.dob || "",
+      birthPlace: doc.birthPlace || "",
+      gender: doc.gender || "Male",
+      nationality: doc.citizenship || doc.nationality || "Filipino",
+      contactNo: doc.contactNo || "",
       address: doc.address || "",
-      purpose: doc.purpose || "",
+      purpose: (doc.purpose || "LOCAL EMPLOYMENT").toUpperCase(),
       civilStatus: doc.civilStatus || "Single",
       orNo: doc.orNumber || doc.paymentNo || "PAY-2026-8921",
-      issuedOn: doc.dateRequested || new Date().toLocaleDateString(),
+      ctc: doc.ctcNumber || doc.ctc || defaultClearanceData.ctc,
+      issuedOn: formattedDate,
+      orDate: formattedDate,
+      stampDate: formattedDate,
+      givenDay: validDate.getDate().toString(),
+      givenMonth: validDate.toLocaleDateString("en-US", { month: "long" }),
+      givenYear: validDate.getFullYear().toString(),
+      givenPlace: "Iriga City, Camarines Sur",
+      certNo: doc.certNo || (doc.id ? doc.id.replace(/^DOC-/, "") : String(nextCertNo || 1)),
+      finding: doc.finding || defaultClearanceData.finding || "NO DEROGATORY RECORD FOUND",
     });
+    setPhotoSrc(doc.photoSrc || "");
     setActiveNav("create");
   };
 
   // Reset form and open blank split view
   const handleOpenBlankSplitView = () => {
     setInspectedDoc(null);
-    setFormData(defaultClearanceData);
+    const today = new Date();
+    const formattedToday = formatEnglishDate(today);
+
+    setFormData({
+      ...defaultClearanceData,
+      issuedOn: formattedToday,
+      orDate: formattedToday,
+      stampDate: formattedToday,
+      givenDay: today.getDate().toString(),
+      givenMonth: today.toLocaleDateString("en-US", { month: "long" }),
+      givenYear: today.getFullYear().toString(),
+      givenPlace: "Iriga City, Camarines Sur",
+      certNo: String(nextCertNo || 1),
+    });
     setPhotoSrc("");
     setSignatureSrc("");
     setActiveNav("create");
@@ -144,18 +236,41 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
       return;
     }
 
-    const created = createStaffDocument({
-      fullName: formData.fullName.toUpperCase(),
-      address: formData.address || "",
-      purpose: formData.purpose || "LOCAL EMPLOYMENT",
-      civilStatus: formData.civilStatus || "Single",
-      documentType: "Barangay / Police Clearance",
-      amountPaid: "₱150.00"
-    });
+    const currentPhoto = photoSrc || inspectedDoc?.photoSrc || "";
 
-    handlePrintActualDocument(created);
-    setInspectedDoc(null);
-    setActiveNav("queue");
+    let targetDoc;
+    if (inspectedDoc && inspectedDoc.id) {
+      // Update existing document status to "Printed & Released" and preserve photoSrc
+      targetDoc = {
+        ...inspectedDoc,
+        ...formData,
+        status: "Printed & Released",
+        photoSrc: currentPhoto
+      };
+      updateDocument(inspectedDoc.id, targetDoc);
+      setInspectedDoc(targetDoc);
+    } else {
+      // Create new direct staff document
+      targetDoc = createStaffDocument({
+        ...formData,
+        fullName: formData.fullName.toUpperCase(),
+        address: formData.address || "",
+        purpose: (formData.purpose || "LOCAL EMPLOYMENT").toUpperCase(),
+        civilStatus: formData.civilStatus || "Single",
+        ctcNumber: formData.ctc,
+        orNumber: formData.orNo,
+        amountPaid: "₱150.00",
+        photoSrc: currentPhoto
+      });
+      setInspectedDoc(targetDoc);
+    }
+
+    // Print with full complete formData & photo
+    handlePrintActualDocument({
+      ...formData,
+      ...targetDoc,
+      photoSrc: currentPhoto
+    });
   };
 
   // Handle scanned string payload
@@ -252,17 +367,46 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   // Print actual official clearance document
   const handlePrintActualDocument = async (doc) => {
     try {
-      const previewData = {
-        fullName: doc.fullName || formData.fullName,
-        address: doc.address || formData.address,
-        purpose: doc.purpose || formData.purpose,
-        civilStatus: doc.civilStatus || formData.civilStatus || "Single",
-        orNo: doc.orNumber || doc.paymentNo || formData.orNo || "PAY-2026-8921",
-        issuedOn: doc.dateRequested || formData.issuedOn || new Date().toLocaleDateString(),
-        documentType: doc.documentType || "Barangay / Police Clearance"
+      const mergedDocData = {
+        ...defaultClearanceData,
+        ...formData,
+        ...doc,
+        fullName: doc?.fullName || formData.fullName,
+        address: doc?.address || formData.address,
+        purpose: doc?.purpose || formData.purpose,
+        civilStatus: doc?.civilStatus || formData.civilStatus || "Single",
+        nationality: doc?.nationality || doc?.citizenship || formData.nationality || "Filipino",
+        dob: doc?.dob || doc?.birthDate || formData.dob,
+        birthPlace: doc?.birthPlace || formData.birthPlace,
+        gender: doc?.gender || formData.gender,
+        contactNo: doc?.contactNo || formData.contactNo,
+        orNo: doc?.orNo || doc?.orNumber || doc?.paymentNo || formData.orNo || "OR-ONLINE",
+        orDate: doc?.orDate || formatEnglishDate(doc?.dateRequested) || formData.orDate || formatEnglishDate(new Date()),
+        stampDate: doc?.stampDate || formatEnglishDate(doc?.dateRequested) || formData.stampDate || formatEnglishDate(new Date()),
+        ctc: doc?.ctc || doc?.ctcNumber || formData.ctc,
+        issuedAt: doc?.issuedAt || formData.issuedAt || "Iriga City",
+        issuedOn: doc?.issuedOn || formatEnglishDate(doc?.dateRequested) || formData.issuedOn || formatEnglishDate(new Date()),
+        certNo: doc?.certNo || formData.certNo || (doc?.id ? doc.id.replace(/^DOC-/, "") : String(nextCertNo || 1)),
+        finding: doc?.finding || formData.finding || "NO DEROGATORY RECORD FOUND",
+        givenDay: doc?.givenDay || formData.givenDay || new Date().getDate().toString(),
+        givenMonth: doc?.givenMonth || formData.givenMonth || new Date().toLocaleDateString("en-US", { month: "long" }),
+        givenYear: doc?.givenYear || formData.givenYear || new Date().getFullYear().toString(),
+        givenPlace: doc?.givenPlace || formData.givenPlace || "Iriga City, Camarines Sur",
+        noteText: doc?.noteText || formData.noteText || "Valid for 6 months from the date of issue.",
+        noteInitials: doc?.noteInitials || formData.noteInitials || "MBL/jnr",
+        clerkName: doc?.clerkName || formData.clerkName,
+        clerkTitle1: doc?.clerkTitle1 || formData.clerkTitle1,
+        clerkTitle2: doc?.clerkTitle2 || formData.clerkTitle2,
+        assistantClerkName: doc?.assistantClerkName || formData.assistantClerkName,
+        assistantClerkTitle: doc?.assistantClerkTitle || formData.assistantClerkTitle,
+        courtName: doc?.courtName || formData.courtName,
+        judicialRegion: doc?.judicialRegion || formData.judicialRegion,
+        courtCity: doc?.courtCity || formData.courtCity,
+        courtEmail: doc?.courtEmail || formData.courtEmail,
+        courtTel: doc?.courtTel || formData.courtTel,
       };
 
-      const fullHtml = await buildActualDocumentHtml(previewData, photoSrc);
+      const fullHtml = await buildActualDocumentHtml(mergedDocData, photoSrc || doc?.photoSrc);
 
       let iframe = document.getElementById("staff-print-iframe");
       if (!iframe) {
@@ -298,6 +442,13 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
         })
       );
 
+      // Wait for font assets to finish decoding to prevent gibberish text in print spooler
+      if (docObj.fonts && docObj.fonts.ready) {
+        try {
+          await docObj.fonts.ready;
+        } catch (fErr) {}
+      }
+
       setTimeout(() => {
         iframe.contentWindow.focus();
         iframe.contentWindow.print();
@@ -310,13 +461,13 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   };
 
   return (
-    <div className="staff-layout-container" style={{ display: "flex", minHeight: "calc(100vh - 61px)", backgroundColor: "#F3F4F6" }}>
+    <div className="staff-layout-container" style={{ display: "flex", minHeight: "calc(100vh - 52px)", backgroundColor: "#F3F4F6" }}>
       {/* SIDEBAR NAVIGATION (Pinned to Visible Viewport Bottom) */}
       <aside className="staff-sidebar-aside" style={{
         width: "250px",
-        height: "calc(100vh - 61px)",
+        height: "calc(100vh - 52px)",
         position: "sticky",
-        top: "61px",
+        top: "52px",
         backgroundColor: "#FFFFFF",
         borderRight: "1px solid #E4E4E7",
         padding: "20px 16px",
@@ -478,6 +629,33 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                 <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
               </svg>
               Clearance Document
+            </button>
+
+            {/* 6. Organization Settings */}
+            <button
+              onClick={() => setActiveNav("settings")}
+              style={{
+                width: "100%",
+                display: "flex",
+                alignItems: "center",
+                gap: "12px",
+                padding: "11px 16px",
+                borderRadius: "9999px",
+                border: "none",
+                backgroundColor: activeNav === "settings" ? "#F4F4F5" : "transparent",
+                color: activeNav === "settings" ? "#09090B" : "#52525B",
+                fontWeight: activeNav === "settings" ? 800 : 600,
+                fontSize: "0.875rem",
+                cursor: "pointer",
+                textAlign: "left",
+                transition: "all 0.15s ease"
+              }}
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <circle cx="12" cy="12" r="3"/>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+              </svg>
+              Organization Settings
             </button>
           </nav>
         </div>
@@ -850,7 +1028,22 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                             {doc.id}
                           </td>
                           <td style={{ padding: "14px 18px", verticalAlign: "middle" }}>
-                            <div style={{ fontWeight: 700, color: "#09090B" }}>{doc.fullName}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: 700, color: "#09090B" }}>{doc.fullName}</span>
+                              {(doc.isSelfRequest || doc.source?.includes("Online")) && (
+                                <span style={{
+                                  fontSize: "0.675rem",
+                                  fontWeight: 800,
+                                  backgroundColor: "#EFF6FF",
+                                  color: "#1D4ED8",
+                                  padding: "2px 8px",
+                                  borderRadius: "9999px",
+                                  border: "1px solid #BFDBFE"
+                                }}>
+                                  Online App
+                                </span>
+                              )}
+                            </div>
                             <div style={{ fontSize: "0.775rem", color: "#71717A" }}>{doc.address}</div>
                           </td>
                           <td style={{ padding: "14px 18px", color: "#52525B", verticalAlign: "middle" }}>{doc.purpose}</td>
@@ -1081,9 +1274,9 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
             }}>
               <input
                 type="text"
-                placeholder="Filter by constituent name, Doc ID, or Payment Ref..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Filter queue by constituent name, Doc ID, or Payment Ref..."
+                value={queueSearchTerm}
+                onChange={(e) => setQueueSearchTerm(e.target.value)}
                 style={{
                   flex: 1,
                   minWidth: "260px",
@@ -1099,28 +1292,28 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
 
               <div style={{ display: "flex", gap: "8px" }}>
                 <button
-                  onClick={() => setStatusFilter("all")}
+                  onClick={() => setQueueStatusFilter("all")}
                   style={{
                     padding: "8px 18px",
                     borderRadius: "9999px",
                     border: "1px solid #D4D4D8",
-                    backgroundColor: statusFilter === "all" ? "#09090B" : "#FFFFFF",
-                    color: statusFilter === "all" ? "#FFFFFF" : "#09090B",
+                    backgroundColor: queueStatusFilter === "all" ? "#09090B" : "#FFFFFF",
+                    color: queueStatusFilter === "all" ? "#FFFFFF" : "#09090B",
                     fontWeight: 700,
                     fontSize: "0.825rem",
                     cursor: "pointer"
                   }}
                 >
-                  All Applications ({documents.length})
+                  All ({documents.length})
                 </button>
                 <button
-                  onClick={() => setStatusFilter("pending")}
+                  onClick={() => setQueueStatusFilter("pending")}
                   style={{
                     padding: "8px 18px",
                     borderRadius: "9999px",
                     border: "1px solid #D4D4D8",
-                    backgroundColor: statusFilter === "pending" ? "#09090B" : "#FFFFFF",
-                    color: statusFilter === "pending" ? "#FFFFFF" : "#09090B",
+                    backgroundColor: queueStatusFilter === "pending" ? "#09090B" : "#FFFFFF",
+                    color: queueStatusFilter === "pending" ? "#FFFFFF" : "#09090B",
                     fontWeight: 700,
                     fontSize: "0.825rem",
                     cursor: "pointer"
@@ -1151,11 +1344,11 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                       </td>
                     </tr>
                   ) : (
-                    paginatedQueueDocs.map((doc) => {
+                    paginatedQueueDocs.map((doc, idx) => {
                       const isPending = doc.status.includes("Pending");
                       return (
                         <tr
-                          key={doc.id}
+                          key={`${doc.id}-${idx}`}
                           onClick={() => handleOpenDocumentSplitView(doc)}
                           style={{
                             borderBottom: "1px solid #F4F4F5",
@@ -1166,7 +1359,22 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                         >
                           <td style={{ padding: "14px 18px", fontWeight: 800, color: "#09090B", fontFamily: "monospace", verticalAlign: "middle" }}>{doc.id}</td>
                           <td style={{ padding: "14px 18px", verticalAlign: "middle" }}>
-                            <div style={{ fontWeight: 700, color: "#09090B" }}>{doc.fullName}</div>
+                            <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                              <span style={{ fontWeight: 700, color: "#09090B" }}>{doc.fullName}</span>
+                              {(doc.isSelfRequest || doc.source?.includes("Online")) && (
+                                <span style={{
+                                  fontSize: "0.675rem",
+                                  fontWeight: 800,
+                                  backgroundColor: "#EFF6FF",
+                                  color: "#1D4ED8",
+                                  padding: "2px 8px",
+                                  borderRadius: "9999px",
+                                  border: "1px solid #BFDBFE"
+                                }}>
+                                  Online App
+                                </span>
+                              )}
+                            </div>
                             <div style={{ fontSize: "0.8rem", color: "#71717A", marginTop: "2px" }}>{doc.purpose}</div>
                           </td>
                           <td style={{ padding: "14px 18px", color: "#52525B", verticalAlign: "middle" }}>{doc.documentType}</td>
@@ -1277,10 +1485,10 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   No application records found matching your filters.
                 </div>
               ) : (
-                paginatedQueueDocs.map((doc) => {
+                paginatedQueueDocs.map((doc, idx) => {
                   const isPending = doc.status.includes("Pending");
                   return (
-                    <div key={doc.id} className="staff-card-item" onClick={() => handleOpenDocumentSplitView(doc)}>
+                    <div key={`${doc.id}-${idx}`} className="staff-card-item" onClick={() => handleOpenDocumentSplitView(doc)}>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "2px" }}>
                         <span style={{ fontFamily: "monospace", fontWeight: 800, fontSize: "0.85rem", color: "#09090B" }}>{doc.id}</span>
                         <span style={{
@@ -1370,7 +1578,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               color: "#71717A"
             }}>
               <div>
-                Showing {filteredDocs.length === 0 ? 0 : (safeQueuePage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeQueuePage * ITEMS_PER_PAGE, filteredDocs.length)} of {filteredDocs.length} entries
+                Showing {filteredQueueDocs.length === 0 ? 0 : (safeQueuePage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeQueuePage * ITEMS_PER_PAGE, filteredQueueDocs.length)} of {filteredQueueDocs.length} entries
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1453,11 +1661,11 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               <input
                 type="text"
                 placeholder="Search master clearance registry by name, Doc ID, or purpose..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={registrySearchTerm}
+                onChange={(e) => setRegistrySearchTerm(e.target.value)}
                 style={{
                   flex: 1,
-                  minWidth: "280px",
+                  minWidth: "260px",
                   padding: "12px 18px",
                   borderRadius: "12px",
                   border: "1px solid #D4D4D8",
@@ -1465,6 +1673,57 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   outline: "none"
                 }}
               />
+
+              <div style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                <button
+                  type="button"
+                  onClick={() => setRegistryStatusFilter("all")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "9999px",
+                    border: "1px solid #D4D4D8",
+                    backgroundColor: registryStatusFilter === "all" ? "#09090B" : "#FFFFFF",
+                    color: registryStatusFilter === "all" ? "#FFFFFF" : "#09090B",
+                    fontWeight: 700,
+                    fontSize: "0.825rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  All ({documents.length})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegistryStatusFilter("pending")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "9999px",
+                    border: "1px solid #D4D4D8",
+                    backgroundColor: registryStatusFilter === "pending" ? "#09090B" : "#FFFFFF",
+                    color: registryStatusFilter === "pending" ? "#FFFFFF" : "#09090B",
+                    fontWeight: 700,
+                    fontSize: "0.825rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  Pending ({pendingCount})
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setRegistryStatusFilter("released")}
+                  style={{
+                    padding: "8px 16px",
+                    borderRadius: "9999px",
+                    border: "1px solid #D4D4D8",
+                    backgroundColor: registryStatusFilter === "released" ? "#09090B" : "#FFFFFF",
+                    color: registryStatusFilter === "released" ? "#FFFFFF" : "#09090B",
+                    fontWeight: 700,
+                    fontSize: "0.825rem",
+                    cursor: "pointer"
+                  }}
+                >
+                  Released ({releasedCount})
+                </button>
+              </div>
 
               <button
                 onClick={handleOpenBlankSplitView}
@@ -1524,7 +1783,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                         <td style={{ padding: "14px 18px", fontWeight: 700, color: "#09090B", verticalAlign: "middle" }}>{doc.fullName}</td>
                         <td style={{ padding: "14px 18px", color: "#52525B", verticalAlign: "middle" }}>{doc.documentType}</td>
                         <td style={{ padding: "14px 18px", color: "#52525B", verticalAlign: "middle" }}>{doc.purpose}</td>
-                        <td style={{ padding: "14px 18px", color: "#71717A", fontSize: "0.875rem", verticalAlign: "middle" }}>{doc.dateRequested}</td>
+                        <td style={{ padding: "14px 18px", color: "#71717A", fontSize: "0.875rem", verticalAlign: "middle" }}>{formatEnglishDate(doc.dateRequested)}</td>
                         <td style={{ padding: "14px 18px", verticalAlign: "middle" }}>
                           <span style={{
                             padding: "5px 12px",
@@ -1622,7 +1881,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                       <div>
                         <div style={{ fontSize: "1.05rem", fontWeight: 800, color: "#09090B", lineHeight: "1.25" }}>{doc.fullName}</div>
                         <div style={{ fontSize: "0.825rem", color: "#71717A", marginTop: "4px" }}>{doc.documentType} • {doc.purpose}</div>
-                        <div style={{ fontSize: "0.775rem", color: "#A1A1AA", marginTop: "4px" }}>Requested: {doc.dateRequested}</div>
+                        <div style={{ fontSize: "0.775rem", color: "#A1A1AA", marginTop: "4px" }}>Requested: {formatEnglishDate(doc.dateRequested)}</div>
                       </div>
                       <div style={{ display: "flex", gap: "10px", marginTop: "6px" }}>
                         <button
@@ -1694,7 +1953,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               color: "#71717A"
             }}>
               <div>
-                Showing {filteredDocs.length === 0 ? 0 : (safeRegistryPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeRegistryPage * ITEMS_PER_PAGE, filteredDocs.length)} of {filteredDocs.length} entries
+                Showing {filteredRegistryDocs.length === 0 ? 0 : (safeRegistryPage - 1) * ITEMS_PER_PAGE + 1} to {Math.min(safeRegistryPage * ITEMS_PER_PAGE, filteredRegistryDocs.length)} of {filteredRegistryDocs.length} entries
               </div>
 
               <div style={{ display: "flex", alignItems: "center", gap: "6px" }}>
@@ -1936,10 +2195,11 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
         {/* 5. CLEARANCE DOCUMENT SPLIT VIEW (WITH BACK BUTTON) */}
         {activeNav === "create" && (
           <div>
-            {/* TOP NAVIGATION BACK BUTTON & DOC BADGE */}
-            <div style={{ marginBottom: "14px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "10px" }}>
+            {/* TOP NAVIGATION BACK BUTTON & DOC BADGE & PRIMARY TOP RIGHT PRINT BUTTON */}
+            <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
               <button
                 type="button"
+                className="staff-btn-back"
                 onClick={() => setActiveNav("queue")}
                 style={{
                   padding: "8px 18px",
@@ -1960,11 +2220,41 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                 ← Back to Queue
               </button>
 
-              {inspectedDoc && (
-                <span style={{ fontSize: "0.825rem", color: "#71717A", fontWeight: 600 }}>
-                  Editing: <strong style={{ color: "#09090B", fontFamily: "monospace" }}>{inspectedDoc.id}</strong>
-                </span>
-              )}
+              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+                {inspectedDoc && (
+                  <span style={{ fontSize: "0.825rem", color: "#71717A", fontWeight: 600 }}>
+                    Editing: <strong style={{ color: "#09090B", fontFamily: "monospace" }}>{inspectedDoc.id}</strong>
+                  </span>
+                )}
+
+                <button
+                  type="button"
+                  className="staff-btn-print-top"
+                  onClick={handleCreateDirectDoc}
+                  style={{
+                    padding: "10px 22px",
+                    backgroundColor: "#09090B",
+                    color: "#FFFFFF",
+                    border: "none",
+                    borderRadius: "9999px",
+                    fontWeight: 800,
+                    fontSize: "0.875rem",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    boxShadow: "0 4px 14px rgba(9, 9, 11, 0.22)",
+                    transition: "transform 0.1s ease"
+                  }}
+                >
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <polyline points="6 9 6 2 18 2 18 9"/>
+                    <path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/>
+                    <rect x="6" y="14" width="12" height="8"/>
+                  </svg>
+                  Print →
+                </button>
+              </div>
             </div>
 
             {/* MOBILE SEGMENTED TOGGLE (SVG Vector Icons Only - No Emojis) */}
@@ -2059,7 +2349,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                     minHeight: "46px"
                   }}
                 >
-                  Print & Release Official Clearance →
+                  Print →
                 </button>
 
                 {/* DANGER ZONE: SAFE PLACEMENT FOR DELETE RECORD BUTTON */}
@@ -2113,7 +2403,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexShrink: 0 }}>
-                  <span style={{ fontSize: "0.725rem", fontWeight: 800, color: "#D97706", backgroundColor: "#FEF3C7", padding: "4px 12px", borderRadius: "9999px" }}>
+                  <span className="staff-badge-preview" style={{ fontSize: "0.725rem", fontWeight: 800, color: "#D97706", backgroundColor: "#FEF3C7", padding: "4px 12px", borderRadius: "9999px" }}>
                     LIVE CLEARANCE PREVIEW (8.5" x 13" OFFICIAL RTC CERTIFICATE)
                   </span>
                 </div>
@@ -2152,8 +2442,142 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                       minHeight: "48px"
                     }}
                   >
-                    Print & Release Official Clearance →
+                    Print →
                   </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 6. ORGANIZATION SETTINGS PANEL */}
+        {activeNav === "settings" && (
+          <div style={{ display: "flex", flexDirection: "column", gap: "24px" }}>
+            <div style={{
+              backgroundColor: "#FFFFFF",
+              borderRadius: "20px",
+              border: "1px solid #E4E4E7",
+              padding: "32px",
+              boxShadow: "0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.02)"
+            }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "14px", marginBottom: "8px" }}>
+                <div style={{
+                  width: "44px",
+                  height: "44px",
+                  borderRadius: "12px",
+                  backgroundColor: "#FAF9F6",
+                  border: "1px solid #E4E4E7",
+                  color: "#09090B",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center"
+                }}>
+                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <circle cx="12" cy="12" r="3"/>
+                    <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+                  </svg>
+                </div>
+                <div>
+                  <h2 style={{ fontSize: "1.35rem", fontWeight: "800", color: "#09090B", margin: 0, letterSpacing: "-0.02em" }}>
+                    Organization Settings
+                  </h2>
+                  <span style={{ fontSize: "0.8rem", color: "#71717A", fontWeight: "600" }}>REGIONAL TRIAL COURT • IRIGA CITY OFFICE</span>
+                </div>
+              </div>
+
+              {/* SETTING CARD: STARTING / NEXT CLEARANCE NO. */}
+              <div style={{
+                marginTop: "24px",
+                padding: "24px",
+                backgroundColor: "#FAF9F6",
+                borderRadius: "16px",
+                border: "1px solid #E4E4E7",
+                display: "flex",
+                flexDirection: "column",
+                gap: "16px"
+              }}>
+                <div>
+                  <label style={{ display: "block", fontSize: "1rem", fontWeight: "800", color: "#09090B", marginBottom: "4px" }}>
+                    Starting Clearance / Certification No.
+                  </label>
+                  <p style={{ fontSize: "0.85rem", color: "#71717A", margin: 0, lineHeight: 1.5 }}>
+                    Set the starting clearance sequence number (e.g., <strong>1</strong>). Every new clearance certificate created by constituents or staff will automatically increment sequentially from this number.
+                  </p>
+                </div>
+
+                <form onSubmit={handleSaveOrgSettings} style={{ display: "flex", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+                  <input
+                    type="number"
+                    min="1"
+                    required
+                    value={certNoInput}
+                    onChange={(e) => setCertNoInput(e.target.value)}
+                    style={{
+                      width: "180px",
+                      padding: "12px 18px",
+                      borderRadius: "12px",
+                      border: "1px solid #D4D4D8",
+                      fontSize: "1.1rem",
+                      fontWeight: "800",
+                      backgroundColor: "#FFFFFF",
+                      color: "#09090B"
+                    }}
+                  />
+                  <button
+                    type="submit"
+                    style={{
+                      padding: "12px 28px",
+                      backgroundColor: "#09090B",
+                      color: "#FFFFFF",
+                      border: "none",
+                      borderRadius: "9999px",
+                      fontWeight: 700,
+                      fontSize: "0.9rem",
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(9, 9, 11, 0.15)"
+                    }}
+                  >
+                    Save Settings
+                  </button>
+                </form>
+
+                {settingsSavedToast && (
+                  <div style={{
+                    padding: "12px 16px",
+                    backgroundColor: "#ECFDF5",
+                    border: "1px solid #A7F3D0",
+                    borderRadius: "10px",
+                    color: "#047857",
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px"
+                  }}>
+                    ✓ Organization settings saved! Next clearance generated will be clearance No. {nextCertNo}.
+                  </div>
+                )}
+              </div>
+
+              {/* OFFICE INFO CARD */}
+              <div style={{
+                marginTop: "24px",
+                padding: "24px",
+                backgroundColor: "#FAF9F6",
+                borderRadius: "16px",
+                border: "1px solid #E4E4E7",
+                display: "flex",
+                flexDirection: "column",
+                gap: "12px"
+              }}>
+                <span style={{ fontSize: "0.75rem", fontWeight: 800, color: "#71717A", textTransform: "uppercase", letterSpacing: "0.08em" }}>
+                  Active Office Profile
+                </span>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: "16px", fontSize: "0.9rem" }}>
+                  <div><strong>Court Name:</strong> <span style={{ color: "#52525B" }}>REGIONAL TRIAL COURT</span></div>
+                  <div><strong>Judicial Region:</strong> <span style={{ color: "#52525B" }}>5th Judicial Region</span></div>
+                  <div><strong>Station / City:</strong> <span style={{ color: "#52525B" }}>Iriga City, Camarines Sur</span></div>
+                  <div><strong>Office:</strong> <span style={{ color: "#52525B" }}>Office of the Clerk of Court</span></div>
                 </div>
               </div>
             </div>
@@ -2393,6 +2817,17 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
             <line x1="5" y1="12" x2="19" y2="12"/>
           </svg>
           <span>New</span>
+        </button>
+        <button
+          type="button"
+          className={`staff-bottom-tab-btn ${activeNav === "settings" ? "active" : ""}`}
+          onClick={() => setActiveNav("settings")}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+            <circle cx="12" cy="12" r="3"/>
+            <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+          </svg>
+          <span>Config</span>
         </button>
       </nav>
     </div>

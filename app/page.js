@@ -3,13 +3,10 @@
 import React, { useState } from "react";
 import Link from "next/link";
 import { MockProvider, useMock } from "../lib/mockStore";
+import { formatEnglishDate } from "../lib/formatters";
 
 export default function WorkstationLandingPage() {
-  return (
-    <MockProvider>
-      <LandingPageContent />
-    </MockProvider>
-  );
+  return <LandingPageContent />;
 }
 
 function LandingPageContent() {
@@ -47,7 +44,7 @@ function LandingPageContent() {
         orNumber: match.orNumber,
         name: match.fullName,
         type: match.documentType || (lang === "en" ? "RTC Court Document Clearance" : "RTC Clearance sa Hukuman"),
-        date: match.dateRequested || new Date().toISOString().split("T")[0],
+        date: formatEnglishDate(match.dateRequested),
         clearanceStatus: match.status,
         remarks: match.remarks,
         location: lang === "en" ? "Hall of Justice - Counter 3" : "Hall of Justice - Counter 3"
@@ -696,7 +693,7 @@ function LandingPageContent() {
                       orNumber: match.orNumber,
                       name: match.fullName,
                       type: match.documentType || "RTC Court Document Clearance",
-                      date: match.dateRequested || new Date().toISOString().split("T")[0],
+                      date: formatEnglishDate(match.dateRequested),
                       clearanceStatus: match.status,
                       remarks: match.remarks,
                       location: "Hall of Justice - Counter 3"

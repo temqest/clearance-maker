@@ -44,27 +44,29 @@ function splitOrdinal(value) {
   return { number: num, suffix };
 }
 
+import { formatEnglishDate } from "../../lib/formatters";
+
 function applyMinimalData(content, formData) {
   let html = content;
   const mapping = [
     ["RICA BORILLA ABINAL ,", escapeHtml(formData.fullName || "")],
     [">Single<", `>${escapeHtml(formData.civilStatus || "")}<`],
     [">Filipino<", `>${escapeHtml(formData.nationality || "")}<`],
-    ["December 2, 1999", escapeHtml(formData.dob || "")],
+    ["December 2, 1999", escapeHtml(formatEnglishDate(formData.dob) || "")],
     ["569 Luluasan, Balatan,, Camarines Sur", escapeHtml(formData.address || "")],
     ["NO CRIMINAL OR CIVIL CASE FILED OR PENDING", escapeHtml(formData.finding || "")],
     ["LOCAL EMPLOYMENT", escapeHtml(formData.purpose || "")],
     ["JEP-26-002967500", escapeHtml(formData.orNo || "")],
     ["23310708", escapeHtml(formData.ctc || "")],
-    ["Naga City, Cam. Sur", escapeHtml(formData.issuedAt || "")],
-    ["April 16, 2026", escapeHtml(formData.issuedOn || "")],
+    ["Naga City, Cam. Sur", escapeHtml(formData.issuedAt || "Iriga City")],
+    ["April 16, 2026", escapeHtml(formatEnglishDate(formData.issuedOn) || "")],
     ["103", escapeHtml(formData.certNo || "")],
     ["HARLETTE R. ARROYO-POTENCIO", escapeHtml(formData.clerkName || "")],
     ["Clerk of Court VI", escapeHtml(formData.clerkTitle1 || "")],
     ["Ex-Officio Provincial Sheriff &amp; Notary Public", escapeHtml(formData.clerkTitle2 || "")],
     [
       "Valid for 6 months from the date of issue.",
-      escapeHtml(formData.noteText || "")
+      escapeHtml(formData.noteText || "Valid for 6 months from the date of issue.")
     ],
     ["MBL/jnr", escapeHtml(formData.noteInitials || "MBL/jnr")],
   ];

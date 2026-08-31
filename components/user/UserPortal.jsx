@@ -8,9 +8,10 @@ import { buildActualDocumentHtml } from "../../lib/documentHtmlBuilder";
 import { exportClearanceDocx } from "../../lib/exportDocx";
 import { generateQrDataUrl } from "../../lib/qrGenerator";
 import { decodeQrFromImageData, decodeQrFromImageFile } from "../../lib/qrScannerHelper";
+import { formatEnglishDate, generateClearanceFilename } from "../../lib/formatters";
 
 export default function UserPortal() {
-  const { userPayment, setUserPayment, userDocument, setUserDocument, submitUserDocument, resetAllStore } = useMock();
+  const { userPayment, setUserPayment, userDocument, setUserDocument, submitUserDocument, resetAllStore, nextCertNo } = useMock();
 
   // Payment form local state
   const [paymentNoInput, setPaymentNoInput] = useState("");
@@ -91,14 +92,13 @@ export default function UserPortal() {
     firstName: "",
     middleName: "",
     birthDate: "",
-    birthPlace: "",
-    gender: "Male",
     citizenship: "Filipino",
-    contactNo: "",
     address: "",
     purpose: "",
     civilStatus: "Single",
     documentType: "Official Clearance Document",
+    orNumber: "",
+    ctcNumber: "",
   });
 
   // Restore local portal state from localStorage
@@ -112,7 +112,27 @@ export default function UserPortal() {
       if (savedPhoto) setPhotoSrc(JSON.parse(savedPhoto));
 
       const savedForm = localStorage.getItem("clearance_user_form_data");
-      if (savedForm) setFormData(JSON.parse(savedForm));
+      if (savedForm) {
+        try {
+          const parsed = JSON.parse(savedForm);
+          if (parsed && typeof parsed === "object") {
+            setFormData((prev) => ({
+              ...prev,
+              ...parsed,
+              lastName: parsed.lastName ?? "",
+              firstName: parsed.firstName ?? "",
+              middleName: parsed.middleName ?? "",
+              birthDate: parsed.birthDate ?? "",
+              citizenship: parsed.citizenship ?? "Filipino",
+              address: parsed.address ?? "",
+              purpose: parsed.purpose ?? "",
+              civilStatus: parsed.civilStatus ?? "Single",
+              orNumber: parsed.orNumber ?? "",
+              ctcNumber: parsed.ctcNumber ?? "",
+            }));
+          }
+        } catch (err) {}
+      }
     } catch (e) {
       console.error("Failed restoring saved portal state:", e);
     }
@@ -291,12 +311,12 @@ export default function UserPortal() {
         ctx.font = "13px sans-serif";
         ctx.fillText(`${doc.documentType || "Clearance Pass"} | ${doc.purpose || "Official Purpose"}`, 250, 520);
         ctx.fillText(`Payment Ref: ${doc.paymentNo || "PAY-2026"}`, 250, 545);
-        ctx.fillText(`Date: ${doc.dateRequested || new Date().toLocaleDateString()}`, 250, 570);
+        ctx.fillText(`Date: ${formatEnglishDate(doc.dateRequested)}`, 250, 570);
 
         const pngData = canvas.toDataURL("image/png");
         const downloadLink = document.createElement("a");
         downloadLink.href = pngData;
-        downloadLink.download = `${(doc.fullName || "Clearance").replace(/[^a-zA-Z0-9]/g, "_")}_QR_Pass.png`;
+        downloadLink.download = generateClearanceFilename(doc, "png");
         document.body.appendChild(downloadLink);
         downloadLink.click();
         document.body.removeChild(downloadLink);
@@ -344,7 +364,7 @@ export default function UserPortal() {
                 <div class="details-row"><span class="details-label">Document:</span><span class="details-val">${doc.documentType || ""}</span></div>
                 <div class="details-row"><span class="details-label">Purpose:</span><span class="details-val">${doc.purpose || ""}</span></div>
                 <div class="details-row"><span class="details-label">Payment Ref:</span><span class="details-val">${doc.paymentNo || ""}</span></div>
-                <div class="details-row"><span class="details-label">Issued On:</span><span class="details-val">${doc.dateRequested || new Date().toLocaleDateString()}</span></div>
+                <div class="details-row"><span class="details-label">Issued On:</span><span class="details-val">${formatEnglishDate(doc.dateRequested)}</span></div>
               </div>
             </div>
           </body>
@@ -426,6 +446,13 @@ export default function UserPortal() {
           });
         })
       );
+
+      // Wait for web fonts to load to prevent gibberish characters during printing
+      if (docObj.fonts && docObj.fonts.ready) {
+        try {
+          await docObj.fonts.ready;
+        } catch (fErr) {}
+      }
 
       setTimeout(() => {
         iframe.contentWindow.focus();
@@ -530,22 +557,22 @@ export default function UserPortal() {
     ...defaultClearanceData,
     fullName: formattedFullName,
     dob: formData.birthDate || "",
-    birthPlace: formData.birthPlace || "",
-    gender: formData.gender || "Male",
     nationality: formData.citizenship || "Filipino",
-    contactNo: formData.contactNo || "",
     civilStatus: formData.civilStatus || "Single",
     purpose: (formData.purpose || "LOCAL EMPLOYMENT").toUpperCase(),
     address: formData.address || "123 Mabini St., Naga City, Camarines Sur",
-    orNo: userPayment?.paymentNo || "PAY-2026-8921",
-    issuedOn: new Date().toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" }),
+    orNo: formData.orNumber || userPayment?.paymentNo || "OR-981245",
+    issuedOn: formatEnglishDate(new Date()),
+    orDate: formatEnglishDate(new Date()),
+    stampDate: formatEnglishDate(new Date()),
     givenDay: new Date().getDate().toString(),
     givenMonth: new Date().toLocaleDateString("en-US", { month: "long" }),
     givenYear: new Date().getFullYear().toString(),
     givenPlace: "Iriga City, Camarines Sur",
-    ctc: `CTC-${Math.floor(10000000 + Math.random() * 90000000)}`,
-    certNo: `${Math.floor(100 + Math.random() * 900)}`,
-    finding: "NO CRIMINAL OR CIVIL CASE FILED OR PENDING",
+    ctc: formData.ctcNumber ? (formData.ctcNumber.toUpperCase().startsWith("CTC") ? formData.ctcNumber.toUpperCase() : `CTC-${formData.ctcNumber}`) : "",
+    certNo: userDocument?.certNo || userDocument?.id?.replace(/^DOC-/, "") || String(nextCertNo || 1),
+    issuedAt: "Iriga City",
+    finding: "NO DEROGATORY RECORD FOUND",
   };
 
   return (
@@ -677,7 +704,7 @@ export default function UserPortal() {
             fontWeight: "700",
             backgroundColor: currentStep === 4 ? "#FAF9F6" : "transparent",
             color: currentStep === 4 ? "#09090B" : "#A1A1AA",
-            border: currentStep === 4 ? "1px solid #09090B" : "1px solid transparent"
+            border: currentStep === 4 ? "1px solid #09090B" : "1px solid #E4E4E7"
           }}>
             04 QR Pass
           </div>
@@ -884,16 +911,24 @@ export default function UserPortal() {
 
             <button
               type="button"
-              onClick={() => setUserPayment(null)}
+              onClick={() => {
+                setUserDocument(null);
+                setIsPreviewingDoc(false);
+                setUserPayment(null);
+              }}
               style={{
-                padding: "8px 16px",
+                padding: "6px 14px",
                 borderRadius: "9999px",
                 backgroundColor: "#FAF9F6",
                 border: "1px solid #E4E4E7",
                 color: "#09090B",
                 fontWeight: 700,
-                fontSize: "0.825rem",
-                cursor: "pointer"
+                fontSize: "0.8rem",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                display: "inline-flex",
+                alignItems: "center",
+                flexShrink: 0
               }}
             >
               ← Back to Payment Verification
@@ -1130,7 +1165,7 @@ export default function UserPortal() {
                     type="text"
                     required
                     placeholder="e.g. Dela Cruz"
-                    value={formData.lastName}
+                    value={formData.lastName || ""}
                     onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
                     style={{
                       width: "100%",
@@ -1153,7 +1188,7 @@ export default function UserPortal() {
                     type="text"
                     required
                     placeholder="e.g. Juan"
-                    value={formData.firstName}
+                    value={formData.firstName || ""}
                     onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
                     style={{
                       width: "100%",
@@ -1175,7 +1210,7 @@ export default function UserPortal() {
                   <input
                     type="text"
                     placeholder="e.g. Santos"
-                    value={formData.middleName}
+                    value={formData.middleName || ""}
                     onChange={(e) => setFormData({ ...formData, middleName: e.target.value })}
                     style={{
                       width: "100%",
@@ -1195,7 +1230,7 @@ export default function UserPortal() {
                     Civil Status <span style={{ color: "#DC2626" }}>*</span>
                   </label>
                   <select
-                    value={formData.civilStatus}
+                    value={formData.civilStatus || "Single"}
                     onChange={(e) => setFormData({ ...formData, civilStatus: e.target.value })}
                     style={{
                       width: "100%",
@@ -1222,7 +1257,7 @@ export default function UserPortal() {
                   <input
                     type="date"
                     required
-                    value={formData.birthDate}
+                    value={formData.birthDate || ""}
                     onChange={(e) => setFormData({ ...formData, birthDate: e.target.value })}
                     style={{
                       width: "100%",
@@ -1239,13 +1274,14 @@ export default function UserPortal() {
 
                 <div>
                   <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 700, color: "#09090B", marginBottom: "6px" }}>
-                    Place of Birth (Lugar ng Kapanganakan)
+                    Official Receipt (OR) Number <span style={{ color: "#DC2626" }}>*</span>
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Iriga City, Camarines Sur"
-                    value={formData.birthPlace}
-                    onChange={(e) => setFormData({ ...formData, birthPlace: e.target.value })}
+                    required
+                    placeholder="e.g. OR-981245"
+                    value={formData.orNumber || ""}
+                    onChange={(e) => setFormData({ ...formData, orNumber: e.target.value })}
                     style={{
                       width: "100%",
                       padding: "14px 18px",
@@ -1261,11 +1297,14 @@ export default function UserPortal() {
 
                 <div>
                   <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 700, color: "#09090B", marginBottom: "6px" }}>
-                    Sex / Gender (Kasarian) <span style={{ color: "#DC2626" }}>*</span>
+                    Community Tax Certificate (CTC) Number <span style={{ color: "#DC2626" }}>*</span>
                   </label>
-                  <select
-                    value={formData.gender}
-                    onChange={(e) => setFormData({ ...formData, gender: e.target.value })}
+                  <input
+                    type="text"
+                    required
+                    placeholder="e.g. CTC-12345678"
+                    value={formData.ctcNumber || ""}
+                    onChange={(e) => setFormData({ ...formData, ctcNumber: e.target.value })}
                     style={{
                       width: "100%",
                       padding: "14px 18px",
@@ -1276,10 +1315,7 @@ export default function UserPortal() {
                       color: "#09090B",
                       boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)"
                     }}
-                  >
-                    <option value="Male">Male (Lalaki)</option>
-                    <option value="Female">Female (Babae)</option>
-                  </select>
+                  />
                 </div>
 
                 <div>
@@ -1289,30 +1325,8 @@ export default function UserPortal() {
                   <input
                     type="text"
                     placeholder="Filipino"
-                    value={formData.citizenship}
+                    value={formData.citizenship || ""}
                     onChange={(e) => setFormData({ ...formData, citizenship: e.target.value })}
-                    style={{
-                      width: "100%",
-                      padding: "14px 18px",
-                      borderRadius: "12px",
-                      border: "1px solid #D4D4D8",
-                      fontSize: "0.95rem",
-                      backgroundColor: "#FFFFFF",
-                      color: "#09090B",
-                      boxShadow: "0 1px 2px rgba(0, 0, 0, 0.04)"
-                    }}
-                  />
-                </div>
-
-                <div>
-                  <label style={{ display: "block", fontSize: "0.875rem", fontWeight: 700, color: "#09090B", marginBottom: "6px" }}>
-                    Mobile / Contact Number
-                  </label>
-                  <input
-                    type="tel"
-                    placeholder="e.g. 0917 123 4567"
-                    value={formData.contactNo}
-                    onChange={(e) => setFormData({ ...formData, contactNo: e.target.value })}
                     style={{
                       width: "100%",
                       padding: "14px 18px",
@@ -1364,7 +1378,7 @@ export default function UserPortal() {
                   required
                   rows={2}
                   placeholder="e.g. Brgy. San Jose, Iriga City"
-                  value={formData.address}
+                  value={formData.address || ""}
                   onChange={(e) => setFormData({ ...formData, address: e.target.value })}
                   style={{
                     width: "100%",
@@ -1570,7 +1584,7 @@ export default function UserPortal() {
             <button
               type="button"
               onClick={() => {
-                submitUserDocument(formData);
+                submitUserDocument({ ...formData, photoSrc });
                 setIsPreviewingDoc(false);
               }}
               style={{

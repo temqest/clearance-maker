@@ -35,13 +35,12 @@ function StaffDashboardContent() {
         width: "100%"
       }}>
         <div style={{
-          padding: "8px 14px",
+          padding: "8px 24px",
           display: "flex",
           alignItems: "center",
           justifyContent: "space-between",
           gap: "12px",
-          maxWidth: "1400px",
-          margin: "0 auto",
+          width: "100%",
           height: "52px",
           boxSizing: "border-box"
         }}>
@@ -129,9 +128,5 @@ function StaffDashboardContent() {
 }
 
 export default function HomeDashboardPage() {
-  return (
-    <MockProvider>
-      <StaffDashboardContent />
-    </MockProvider>
-  );
+  return <StaffDashboardContent />;
 }

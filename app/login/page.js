@@ -87,14 +87,19 @@ export default function LoginPage() {
           </Link>
 
           <Link href="/" style={{
-            padding: "8px 18px",
+            padding: "6px 14px",
             borderRadius: "9999px",
             backgroundColor: "#FFFFFF",
             border: "1px solid #E4E4E7",
             color: "#09090B",
             fontWeight: 700,
-            fontSize: "0.85rem",
-            textDecoration: "none"
+            fontSize: "0.8rem",
+            textDecoration: "none",
+            whiteSpace: "nowrap",
+            display: "inline-flex",
+            alignItems: "center",
+            justifyContent: "center",
+            flexShrink: 0
           }}>
             ← Back to Portal
           </Link>
