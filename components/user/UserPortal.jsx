@@ -80,7 +80,19 @@ export default function UserPortal() {
 
   useEffect(() => {
     if (userDocument?.id) {
-      const payload = userDocument.id;
+      const payload = JSON.stringify({
+        id: userDocument.id,
+        certNo: userDocument.certNo,
+        fullName: userDocument.fullName,
+        purpose: userDocument.purpose,
+        orNumber: userDocument.orNumber || userDocument.orNo || userDocument.paymentNo,
+        paymentNo: userDocument.paymentNo,
+        birthDate: userDocument.birthDate,
+        address: userDocument.address,
+        civilStatus: userDocument.civilStatus,
+        documentType: userDocument.documentType,
+        photoSrc: userDocument.photoSrc || "",
+      });
       generateQrDataUrl(payload, { width: 300 }).then((url) => {
         if (url) setRealQrUrl(url);
       });
