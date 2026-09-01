@@ -106,12 +106,46 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
     return aIsPending - bIsPending;
   });
 
+  // Flexible search matcher supporting numeric normalization (e.g. DOC-012, 012, 12)
+  const matchesDocumentSearch = (doc, query) => {
+    if (!doc || !query) return true;
+    const q = query.trim().toLowerCase();
+    if (!q) return true;
+
+    const matchName = doc.fullName && doc.fullName.toLowerCase().includes(q);
+    const matchId = doc.id && doc.id.toLowerCase().includes(q);
+    const matchCertNo = doc.certNo && String(doc.certNo).toLowerCase().includes(q);
+    const matchPayment = doc.paymentNo && doc.paymentNo.toLowerCase().includes(q);
+    const matchOr = (doc.orNumber || doc.orNo) && String(doc.orNumber || doc.orNo).toLowerCase().includes(q);
+    const matchPurpose = doc.purpose && doc.purpose.toLowerCase().includes(q);
+    const matchType = doc.documentType && doc.documentType.toLowerCase().includes(q);
+
+    if (matchName || matchId || matchCertNo || matchPayment || matchOr || matchPurpose || matchType) {
+      return true;
+    }
+
+    const qDigits = q.replace(/\D/g, "");
+    if (qDigits) {
+      const qNum = parseInt(qDigits, 10);
+      if (!isNaN(qNum)) {
+        const idDigits = (doc.id || "").replace(/\D/g, "");
+        const certDigits = String(doc.certNo || "").replace(/\D/g, "");
+        const paymentDigits = (doc.paymentNo || "").replace(/\D/g, "");
+        const orDigits = String(doc.orNumber || doc.orNo || "").replace(/\D/g, "");
+
+        if (idDigits && parseInt(idDigits, 10) === qNum) return true;
+        if (certDigits && parseInt(certDigits, 10) === qNum) return true;
+        if (paymentDigits && parseInt(paymentDigits, 10) === qNum) return true;
+        if (orDigits && parseInt(orDigits, 10) === qNum) return true;
+      }
+    }
+
+    return false;
+  };
+
   // Filter Dashboard live queue documents
   const filteredDocs = sortedDocs.filter((doc) => {
-    const matchesSearch =
-      doc.fullName.toLowerCase().includes(effectiveQueueSearch.toLowerCase()) ||
-      doc.id.toLowerCase().includes(effectiveQueueSearch.toLowerCase()) ||
-      (doc.paymentNo && doc.paymentNo.toLowerCase().includes(effectiveQueueSearch.toLowerCase()));
+    const matchesSearch = matchesDocumentSearch(doc, effectiveQueueSearch);
 
     if (statusFilter === "pending") return matchesSearch && doc.status.includes("Pending");
     if (statusFilter === "released") return matchesSearch && (doc.status.includes("Released") || doc.status.includes("Printed"));
@@ -120,10 +154,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
 
   // Filter Queue tab documents
   const filteredQueueDocs = sortedDocs.filter((doc) => {
-    const matchesSearch =
-      doc.fullName.toLowerCase().includes(effectiveQueueSearch.toLowerCase()) ||
-      doc.id.toLowerCase().includes(effectiveQueueSearch.toLowerCase()) ||
-      (doc.paymentNo && doc.paymentNo.toLowerCase().includes(effectiveQueueSearch.toLowerCase()));
+    const matchesSearch = matchesDocumentSearch(doc, effectiveQueueSearch);
 
     if (queueStatusFilter === "pending") return matchesSearch && doc.status.includes("Pending");
     if (queueStatusFilter === "released") return matchesSearch && (doc.status.includes("Released") || doc.status.includes("Printed"));
@@ -132,12 +163,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
 
   // Filter Registry tab documents (independent filter & search)
   const filteredRegistryDocs = sortedDocs.filter((doc) => {
-    const matchesSearch =
-      doc.fullName.toLowerCase().includes(registrySearchTerm.toLowerCase()) ||
-      doc.id.toLowerCase().includes(registrySearchTerm.toLowerCase()) ||
-      (doc.purpose && doc.purpose.toLowerCase().includes(registrySearchTerm.toLowerCase())) ||
-      (doc.documentType && doc.documentType.toLowerCase().includes(registrySearchTerm.toLowerCase())) ||
-      (doc.paymentNo && doc.paymentNo.toLowerCase().includes(registrySearchTerm.toLowerCase()));
+    const matchesSearch = matchesDocumentSearch(doc, registrySearchTerm);
 
     if (registryStatusFilter === "pending") return matchesSearch && doc.status.includes("Pending");
     if (registryStatusFilter === "released") return matchesSearch && (doc.status.includes("Released") || doc.status.includes("Printed"));
