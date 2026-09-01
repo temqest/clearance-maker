@@ -103,7 +103,24 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   const sortedDocs = Array.from(uniqueDocsMap.values()).sort((a, b) => {
     const aIsPending = (a.status || "").includes("Pending") ? 0 : 1;
     const bIsPending = (b.status || "").includes("Pending") ? 0 : 1;
-    return aIsPending - bIsPending;
+
+    // 1. Always group Pending items on top
+    if (aIsPending !== bIsPending) {
+      return aIsPending - bIsPending;
+    }
+
+    // 2. Prioritize earliest made first (FIFO queue)
+    const getDocTimestamp = (doc) => {
+      if (doc.createdAtTimestamp) return doc.createdAtTimestamp;
+      if (doc.dateRequested) {
+        const parsed = new Date(doc.dateRequested).getTime();
+        if (!isNaN(parsed)) return parsed;
+      }
+      const certNum = parseInt(String(doc.certNo || doc.id).replace(/\D/g, ""), 10);
+      return !isNaN(certNum) ? certNum : 0;
+    };
+
+    return getDocTimestamp(a) - getDocTimestamp(b);
   });
 
   // Flexible search matcher supporting numeric normalization (e.g. DOC-012, 012, 12)

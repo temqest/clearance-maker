@@ -95,7 +95,7 @@ export default function UserPortal() {
         address: userDocument.address,
         civilStatus: userDocument.civilStatus,
         documentType: userDocument.documentType,
-        photoSrc: userDocument.photoSrc || "",
+        hasPhoto: !!userDocument.photoSrc,
       });
       generateQrDataUrl(payload, { width: 300 }).then((url) => {
         if (url) setRealQrUrl(url);
@@ -1717,29 +1717,26 @@ export default function UserPortal() {
               <img
                 id="clearance-qr-img"
                 src={realQrUrl}
-                alt={`QR Pass for ${userDocument.id}`}
-                style={{ width: "200px", height: "200px", borderRadius: "8px" }}
+                alt={`Real QR Pass for ${userDocument.id}`}
+                style={{ width: "200px", height: "200px", borderRadius: "8px", objectFit: "contain" }}
               />
             ) : (
-              <svg id="clearance-qr-svg" width="180" height="180" viewBox="0 0 100 100" style={{ shapeRendering: "crispEdges" }}>
-                <rect width="100" height="100" fill="#ffffff" />
-                <rect x="10" y="10" width="25" height="25" fill="#09090B" />
-                <rect x="15" y="15" width="15" height="15" fill="#ffffff" />
-                <rect x="18" y="18" width="9" height="9" fill="#09090B" />
-                <rect x="65" y="10" width="25" height="25" fill="#09090B" />
-                <rect x="70" y="15" width="15" height="15" fill="#ffffff" />
-                <rect x="73" y="18" width="9" height="9" fill="#09090B" />
-                <rect x="10" y="65" width="25" height="25" fill="#09090B" />
-                <rect x="15" y="70" width="15" height="15" fill="#ffffff" />
-                <rect x="18" y="73" width="9" height="9" fill="#09090B" />
-                <rect x="42" y="12" width="12" height="6" fill="#09090B" />
-                <rect x="40" y="24" width="8" height="12" fill="#09090B" />
-                <rect x="12" y="42" width="18" height="6" fill="#09090B" />
-                <rect x="45" y="45" width="18" height="18" fill="#09090B" />
-                <rect x="70" y="42" width="15" height="8" fill="#09090B" />
-                <rect x="40" y="70" width="12" height="12" fill="#09090B" />
-                <rect x="68" y="68" width="20" height="20" fill="#09090B" />
-              </svg>
+              <div
+                style={{
+                  width: "200px",
+                  height: "200px",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  backgroundColor: "#F4F4F5",
+                  borderRadius: "8px",
+                  color: "#71717A",
+                  fontSize: "0.85rem",
+                  fontWeight: 700
+                }}
+              >
+                Generating Real QR Pass...
+              </div>
             )}
             <div style={{ marginTop: "14px", fontFamily: "monospace", fontSize: "1.2rem", fontWeight: "800", color: "#09090B" }}>
               {userDocument.id}
