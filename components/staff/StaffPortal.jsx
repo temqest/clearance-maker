@@ -55,6 +55,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   const [scannedDocMatch, setScannedDocMatch] = useState(null);
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [cameraStatus, setCameraStatus] = useState("");
+  const [scannedToast, setScannedToast] = useState(null);
   const videoRef = useRef(null);
   // Form State (matches original EditorPanel)
   const [formData, setFormData] = useState(defaultClearanceData);
@@ -277,16 +278,40 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   const handleProcessScannedText = (text) => {
     if (!text) return;
     let refId = text.trim();
+    let parsedObj = null;
     try {
-      const parsed = JSON.parse(text);
-      if (parsed && parsed.id) refId = parsed.id;
+      parsedObj = JSON.parse(text);
+      if (parsedObj && (parsedObj.id || parsedObj.refId)) {
+        refId = parsedObj.id || parsedObj.refId;
+      }
     } catch (err) {}
 
     setScannerInput(refId);
-    const match = lookupDocument(refId);
+    let match = lookupDocument(refId);
+    if (!match && parsedObj && (parsedObj.fullName || parsedObj.name)) {
+      match = {
+        id: parsedObj.id || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
+        fullName: (parsedObj.fullName || parsedObj.name || "").toUpperCase(),
+        address: parsedObj.address || "",
+        purpose: (parsedObj.purpose || "LOCAL EMPLOYMENT").toUpperCase(),
+        civilStatus: parsedObj.civilStatus || "Single",
+        citizenship: parsedObj.citizenship || parsedObj.nationality || "Filipino",
+        birthDate: parsedObj.birthDate || parsedObj.dob || "",
+        gender: parsedObj.gender || "Male",
+        contactNo: parsedObj.contactNo || "",
+        orNumber: parsedObj.orNumber || parsedObj.paymentNo || "PAY-2026-8921",
+        ctcNumber: parsedObj.ctcNumber || parsedObj.ctc || "CTC-2026-0012",
+        status: "Pending Printing",
+        photoSrc: parsedObj.photoSrc || ""
+      };
+    }
+
     if (match) {
       setScannedDocMatch(match);
       setCameraStatus(`Match verified: ${match.id}`);
+      setScannedToast(`QR Code Scanned! Auto-loaded file created for ${match.fullName} (${match.id}).`);
+      setTimeout(() => setScannedToast(null), 6000);
+      handleOpenDocumentSplitView(match);
     } else {
       setScannedDocMatch(null);
       setCameraStatus(`Scanned code "${refId}" — no matching record found.`);
@@ -2195,6 +2220,35 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
         {/* 5. CLEARANCE DOCUMENT SPLIT VIEW (WITH BACK BUTTON) */}
         {activeNav === "create" && (
           <div>
+            {scannedToast && (
+              <div style={{
+                backgroundColor: "#ECFDF5",
+                border: "1px solid #6EE7B7",
+                color: "#065F46",
+                padding: "12px 20px",
+                borderRadius: "16px",
+                marginBottom: "16px",
+                fontWeight: 700,
+                fontSize: "0.9rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "1.1rem" }}>✓</span>
+                  <span>{scannedToast}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setScannedToast(null)}
+                  style={{ background: "none", border: "none", color: "#065F46", cursor: "pointer", fontWeight: 800, fontSize: "1rem" }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {/* TOP NAVIGATION BACK BUTTON & DOC BADGE & PRIMARY TOP RIGHT PRINT BUTTON */}
             <div style={{ marginBottom: "16px", display: "flex", justifyContent: "space-between", alignItems: "center", gap: "12px", flexWrap: "wrap" }}>
               <button
