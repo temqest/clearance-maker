@@ -274,6 +274,8 @@ export default function UserPortal() {
   };
 
   const [isPreviewingDoc, setIsPreviewingDoc] = useState(false);
+  const [isSubmittingDoc, setIsSubmittingDoc] = useState(false);
+  const [dbSyncNotice, setDbSyncNotice] = useState(null);
 
   // Download handlers for Step 4 (QR Pass & Clearance Document in PNG/PDF)
   const handleDownloadQrPng = async (doc) => {
