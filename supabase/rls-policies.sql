@@ -5,76 +5,48 @@ drop policy if exists "Users can view their own documents" on public.documents;
 drop policy if exists "Users can insert their own documents" on public.documents;
 drop policy if exists "Users can update their own documents" on public.documents;
 drop policy if exists "Users can delete their own documents" on public.documents;
+drop policy if exists "Anyone can submit clearance applications" on public.documents;
+drop policy if exists "Anyone can view clearance documents for verification" on public.documents;
 
-create policy "Users can view their own documents"
-on public.documents
-for select
-using (auth.uid() = owner_id);
-
-create policy "Users can insert their own documents"
+-- Public applicants can submit clearance requests
+create policy "Anyone can submit clearance applications"
 on public.documents
 for insert
-with check (auth.uid() = owner_id);
+with check (true);
+
+-- Public & Court Staff can lookup/verify documents by cert_no or payment_no
+create policy "Anyone can view clearance documents for verification"
+on public.documents
+for select
+using (true);
 
 create policy "Users can update their own documents"
 on public.documents
 for update
-using (auth.uid() = owner_id)
-with check (auth.uid() = owner_id);
+using (auth.uid() = owner_id or auth.role() = 'authenticated')
+with check (auth.uid() = owner_id or auth.role() = 'authenticated');
 
 create policy "Users can delete their own documents"
 on public.documents
 for delete
-using (auth.uid() = owner_id);
+using (auth.uid() = owner_id or auth.role() = 'authenticated');
 
 -- Storage policies for existing bucket: documents
--- Bucket creation is included as idempotent safety in case it does not exist.
 insert into storage.buckets (id, name, public)
-values ('documents', 'documents', false)
-on conflict (id) do nothing;
+values ('documents', 'documents', true)
+on conflict (id) do update set public = true;
 
 drop policy if exists "Users can read their own files" on storage.objects;
 drop policy if exists "Users can upload their own files" on storage.objects;
-drop policy if exists "Users can update their own files" on storage.objects;
-drop policy if exists "Users can delete their own files" on storage.objects;
+drop policy if exists "Anyone can upload applicant files" on storage.objects;
+drop policy if exists "Anyone can view applicant files" on storage.objects;
 
-create policy "Users can read their own files"
+create policy "Anyone can view applicant files"
 on storage.objects
 for select
-using (
-  bucket_id = 'documents'
-  and auth.role() = 'authenticated'
-  and (storage.foldername(name))[1] = auth.uid()::text
-);
+using (bucket_id = 'documents');
 
-create policy "Users can upload their own files"
+create policy "Anyone can upload applicant files"
 on storage.objects
 for insert
-with check (
-  bucket_id = 'documents'
-  and auth.role() = 'authenticated'
-  and (storage.foldername(name))[1] = auth.uid()::text
-);
-
-create policy "Users can update their own files"
-on storage.objects
-for update
-using (
-  bucket_id = 'documents'
-  and auth.role() = 'authenticated'
-  and (storage.foldername(name))[1] = auth.uid()::text
-)
-with check (
-  bucket_id = 'documents'
-  and auth.role() = 'authenticated'
-  and (storage.foldername(name))[1] = auth.uid()::text
-);
-
-create policy "Users can delete their own files"
-on storage.objects
-for delete
-using (
-  bucket_id = 'documents'
-  and auth.role() = 'authenticated'
-  and (storage.foldername(name))[1] = auth.uid()::text
-);
+with check (bucket_id = 'documents');

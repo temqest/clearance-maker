@@ -12,7 +12,7 @@ import { formatEnglishDate } from "../../lib/formatters";
 
 export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   const router = useRouter();
-  const { documents, markAsPrinted, createStaffDocument, updateDocument, deleteDocument, lookupDocument, nextCertNo, updateNextCertNo } = useMock();
+  const { documents, markAsPrinted, createStaffDocument, updateDocument, deleteDocument, lookupDocument, lookupDocumentAsync, nextCertNo, updateNextCertNo } = useMock();
 
   // Active sidebar navigation pill
   const [activeNav, setActiveNav] = useState("dashboard"); // 'dashboard' | 'queue' | 'registry' | 'scanner' | 'create' | 'settings'
@@ -301,7 +301,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   };
 
   // Handle scanned string payload
-  const handleProcessScannedText = (text) => {
+  const handleProcessScannedText = async (text) => {
     if (!text) return;
     let refId = text.trim();
     let parsedObj = null;
@@ -313,7 +313,13 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
     } catch (err) {}
 
     setScannerInput(refId);
+    setCameraStatus(`Searching record "${refId}"...`);
+
     let match = lookupDocument(refId);
+    if (!match && lookupDocumentAsync) {
+      match = await lookupDocumentAsync(refId);
+    }
+
     if (!match && parsedObj && (parsedObj.fullName || parsedObj.name)) {
       match = {
         id: parsedObj.id || `DOC-${Math.floor(1000 + Math.random() * 9000)}`,
@@ -340,7 +346,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
       handleOpenDocumentSplitView(match);
     } else {
       setScannedDocMatch(null);
-      setCameraStatus(`Scanned code "${refId}" — no matching record found.`);
+      setCameraStatus(`Scanned code "${refId}" — no matching record found in database or local store.`);
     }
   };
 
