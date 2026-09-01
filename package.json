@@ -5,7 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "test:db": "node scripts/test-db-integration.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

@@ -18,7 +18,8 @@ create table if not exists public.documents (
   updated_at timestamptz not null default now()
 );
 
--- Safely add missing columns to pre-existing table in Supabase
+-- Safely add missing columns & drop NOT NULL constraint on owner_id for public submissions
+alter table public.documents alter column owner_id drop not null;
 alter table public.documents add column if not exists cert_no text;
 alter table public.documents add column if not exists or_number text;
 alter table public.documents add column if not exists idempotency_key text;

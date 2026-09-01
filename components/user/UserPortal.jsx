@@ -1595,26 +1595,38 @@ export default function UserPortal() {
 
             <button
               type="button"
-              onClick={() => {
-                submitUserDocument({ ...formData, photoSrc });
-                setIsPreviewingDoc(false);
+              disabled={isSubmittingDoc}
+              onClick={async () => {
+                setIsSubmittingDoc(true);
+                setDbSyncNotice(null);
+                try {
+                  const res = await submitUserDocument({ ...formData, photoSrc });
+                  if (res && res.dbError) {
+                    setDbSyncNotice(`Database Warning: ${res.dbError}`);
+                  }
+                  setIsPreviewingDoc(false);
+                } catch (err) {
+                  setDbSyncNotice(`Submission Error: ${err.message || "Failed to sync to database"}`);
+                } finally {
+                  setIsSubmittingDoc(false);
+                }
               }}
               style={{
                 flex: 1,
                 minWidth: "240px",
                 padding: "16px 32px",
-                backgroundColor: "#09090B",
+                backgroundColor: isSubmittingDoc ? "#71717A" : "#09090B",
                 color: "#FFFFFF",
                 border: "none",
                 borderRadius: "9999px",
                 fontWeight: 700,
                 fontSize: "1rem",
-                cursor: "pointer",
+                cursor: isSubmittingDoc ? "wait" : "pointer",
                 boxShadow: "0 4px 16px rgba(9, 9, 11, 0.2)",
                 minHeight: "52px"
               }}
             >
-              Confirm & Issue Digital QR Pass →
+              {isSubmittingDoc ? "Saving & Issuing QR Pass..." : "Confirm & Issue Digital QR Pass →"}
             </button>
           </div>
         </div>
@@ -1630,6 +1642,36 @@ export default function UserPortal() {
           boxShadow: "0 12px 32px -4px rgba(0, 0, 0, 0.06)",
           textAlign: "center"
         }}>
+          {dbSyncNotice && (
+            <div style={{
+              backgroundColor: "#FEF2F2",
+              border: "1px solid #FCA5A5",
+              color: "#991B1B",
+              padding: "14px 20px",
+              borderRadius: "16px",
+              marginBottom: "20px",
+              fontWeight: 700,
+              fontSize: "0.875rem",
+              textAlign: "left",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between"
+            }}>
+              <div>
+                <strong>⚠️ Sync Warning:</strong> {dbSyncNotice}
+                <div style={{ fontSize: "0.8rem", fontWeight: "normal", marginTop: "2px", color: "#7F1D1D" }}>
+                  Your local QR pass is ready, but your database permission or schema requires execution of the SQL migration. Present your phone screen to counter staff.
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setDbSyncNotice(null)}
+                style={{ background: "none", border: "none", color: "#991B1B", cursor: "pointer", fontWeight: 800, fontSize: "1rem" }}
+              >
+                ✕
+              </button>
+            </div>
+          )}
           <div style={{
             display: "inline-block",
             padding: "6px 16px",
