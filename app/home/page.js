@@ -3,7 +3,6 @@
 import React, { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { MockProvider } from "../../lib/mockStore";
 import StaffPortal from "../../components/staff/StaffPortal";
 import { createSupabaseBrowserClient } from "../../lib/supabase/client";
 

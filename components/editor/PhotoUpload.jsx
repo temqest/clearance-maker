@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { fileToWordSafeDataUrl } from "lib/imageDataUrl";
+import { fileToWordSafeDataUrl } from "../../lib/imageDataUrl";
 import styles from "./PhotoUpload.module.css";
 
 export default function PhotoUpload({ photoSrc, onPhotoChange, onPhotoRemove }) {

@@ -1,6 +1,6 @@
 import { useRef } from "react";
-import { formSections } from "lib/formSections";
-import { fileToWordSafeDataUrl } from "lib/imageDataUrl";
+import { formSections } from "../../lib/formSections";
+import { fileToWordSafeDataUrl } from "../../lib/imageDataUrl";
 import PhotoUpload from "./PhotoUpload";
 import styles from "./EditorPanel.module.css";
 

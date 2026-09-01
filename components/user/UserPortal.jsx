@@ -37,19 +37,23 @@ export default function UserPortal() {
     let stream = null;
     if (isPhotoCameraOpen) {
       setPhotoCameraStatus("Accessing device camera...");
-      navigator.mediaDevices?.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } } })
-        .then((s) => {
-          stream = s;
-          if (photoVideoRef.current) {
-            photoVideoRef.current.srcObject = stream;
-            photoVideoRef.current.play();
-          }
-          setPhotoCameraStatus("Position your face inside the box and click Snap Photo!");
-        })
-        .catch((err) => {
-          console.warn("Live photo camera error:", err);
-          setPhotoCameraStatus("Camera access denied or unavailable. Please upload a photo file instead.");
-        });
+      if (typeof navigator !== "undefined" && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function") {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "user", width: { ideal: 640 }, height: { ideal: 640 } } })
+          .then((s) => {
+            stream = s;
+            if (photoVideoRef.current) {
+              photoVideoRef.current.srcObject = stream;
+              photoVideoRef.current.play();
+            }
+            setPhotoCameraStatus("Position your face inside the box and click Snap Photo!");
+          })
+          .catch((err) => {
+            console.warn("Live photo camera error:", err);
+            setPhotoCameraStatus("Camera access denied or unavailable. Please upload a photo file instead.");
+          });
+      } else {
+        setPhotoCameraStatus("Camera is unavailable on this browser/device. Please upload a photo file instead.");
+      }
     }
 
     return () => {
@@ -203,39 +207,44 @@ export default function UserPortal() {
 
     if (isReceiptScannerOpen && isScanningReceipt) {
       setReceiptScanStatus("Accessing webcam...");
-      navigator.mediaDevices?.getUserMedia({ video: { facingMode: "environment" } })
-        .then((s) => {
-          stream = s;
-          if (receiptVideoRef.current) {
-            receiptVideoRef.current.srcObject = stream;
-            receiptVideoRef.current.play();
-          }
-          setReceiptScanStatus("Webcam active. Align receipt QR...");
-
-          const scanCanvas = document.createElement("canvas");
-          const scanCtx = scanCanvas.getContext("2d");
-
-          const tick = () => {
-            if (receiptVideoRef.current && receiptVideoRef.current.readyState === receiptVideoRef.current.HAVE_ENOUGH_DATA) {
-              scanCanvas.width = receiptVideoRef.current.videoWidth;
-              scanCanvas.height = receiptVideoRef.current.videoHeight;
-              scanCtx.drawImage(receiptVideoRef.current, 0, 0, scanCanvas.width, scanCanvas.height);
-              const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
-              const decoded = decodeQrFromImageData(imageData);
-              if (decoded) {
-                handleProcessScannedReceipt(decoded);
-                return;
-              }
+      if (typeof navigator !== "undefined" && navigator.mediaDevices && typeof navigator.mediaDevices.getUserMedia === "function") {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+          .then((s) => {
+            stream = s;
+            if (receiptVideoRef.current) {
+              receiptVideoRef.current.srcObject = stream;
+              receiptVideoRef.current.play();
             }
+            setReceiptScanStatus("Webcam active. Align receipt QR...");
+
+            const scanCanvas = document.createElement("canvas");
+            const scanCtx = scanCanvas.getContext("2d");
+
+            const tick = () => {
+              if (receiptVideoRef.current && receiptVideoRef.current.readyState === receiptVideoRef.current.HAVE_ENOUGH_DATA) {
+                scanCanvas.width = receiptVideoRef.current.videoWidth;
+                scanCanvas.height = receiptVideoRef.current.videoHeight;
+                scanCtx.drawImage(receiptVideoRef.current, 0, 0, scanCanvas.width, scanCanvas.height);
+                const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+                const decoded = decodeQrFromImageData(imageData);
+                if (decoded) {
+                  handleProcessScannedReceipt(decoded);
+                  return;
+                }
+              }
+              animId = requestAnimationFrame(tick);
+            };
             animId = requestAnimationFrame(tick);
-          };
-          animId = requestAnimationFrame(tick);
-        })
-        .catch((err) => {
-          console.warn("Receipt camera error:", err);
-          setReceiptScanStatus("Camera unavailable. Use image file upload below.");
-          setIsScanningReceipt(false);
-        });
+          })
+          .catch((err) => {
+            console.warn("Receipt camera error:", err);
+            setReceiptScanStatus("Camera unavailable. Use image file upload below.");
+            setIsScanningReceipt(false);
+          });
+      } else {
+        setReceiptScanStatus("Camera is unavailable on this browser/device. Use image file upload below.");
+        setIsScanningReceipt(false);
+      }
     }
 
     return () => {

@@ -2,14 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import HeaderBar from "components/layout/HeaderBar";
-import EditorPanel from "components/editor/EditorPanel";
-import PreviewPanel from "components/preview/PreviewPanel";
-import { defaultClearanceData } from "lib/defaultClearanceData";
-import { exportClearanceDocx } from "lib/exportDocx";
-import { blobToDataUrl, dataUrlToBlob, getFileExtensionFromMime } from "lib/fileTransforms";
-import { buildClearanceFileName } from "lib/printFileName";
-import { createSupabaseBrowserClient } from "lib/supabase/client";
+import HeaderBar from "../../components/layout/HeaderBar";
+import EditorPanel from "../../components/editor/EditorPanel";
+import PreviewPanel from "../../components/preview/PreviewPanel";
+import { defaultClearanceData } from "../../lib/defaultClearanceData";
+import { exportClearanceDocx } from "../../lib/exportDocx";
+import { blobToDataUrl, dataUrlToBlob, getFileExtensionFromMime } from "../../lib/fileTransforms";
+import { buildClearanceFileName } from "../../lib/printFileName";
+import { createSupabaseBrowserClient } from "../../lib/supabase/client";
 import styles from "./page.module.css";
 
 const PRINT_RESOURCE_TIMEOUT_MS = 8000;
