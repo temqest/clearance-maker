@@ -6,7 +6,9 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "test:db": "node scripts/test-db-integration.js"
+    "test:db": "node scripts/test-db-integration.js",
+    "test:concurrency": "node scripts/test-race-condition.js",
+    "test:e2e": "node scripts/test-e2e.js"
   },
   "dependencies": {
     "@supabase/ssr": "^0.10.2",

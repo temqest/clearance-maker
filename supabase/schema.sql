@@ -22,6 +22,7 @@ create table if not exists public.documents (
 alter table public.documents alter column owner_id drop not null;
 alter table public.documents add column if not exists cert_no text;
 alter table public.documents add column if not exists or_number text;
+alter table public.documents add column if not exists ctc_number text;
 alter table public.documents add column if not exists idempotency_key text;
 
 -- Safely add unique constraints if not already attached

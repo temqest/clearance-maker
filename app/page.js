@@ -10,7 +10,7 @@ export default function WorkstationLandingPage() {
 }
 
 function LandingPageContent() {
-  const { lookupDocument } = useMock();
+  const { lookupDocumentAsync } = useMock();
   // Language & Helper Tool State
   const [lang, setLang] = useState("en"); // 'en' | 'fil'
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -18,45 +18,59 @@ function LandingPageContent() {
   const [activeModal, setActiveModal] = useState(null); // null | 'requirements' | 'proceed' | 'howToUse'
   const [testRefInput, setTestRefInput] = useState("");
   const [lookupResult, setLookupResult] = useState(null);
+  const [isSearching, setIsSearching] = useState(false);
 
   const toggleLanguage = () => {
     setLang((prev) => (prev === "en" ? "fil" : "en"));
   };
 
-  const handleTestLookup = (e) => {
+  const handleTestLookup = async (e) => {
     if (e && e.preventDefault) e.preventDefault();
-    if (!testRefInput.trim()) {
+    const cleanQuery = testRefInput.trim();
+    if (!cleanQuery) {
       setLookupResult({
         status: "error",
         message: lang === "en" 
-          ? "Please enter your reference code (e.g., DOC-8921, PAY-2026-8921, or OR-981245)." 
-          : "Mangyaring ilagay ang inyong reference code (hal. DOC-8921, PAY-2026-8921, o OR-981245)."
+          ? "Please enter your Reference Code, OR Number, or Name." 
+          : "Mangyaring ilagay ang inyong Reference Code, OR Number, o Pangalan."
       });
       return;
     }
 
-    const match = lookupDocument(testRefInput);
-    if (match) {
+    setIsSearching(true);
+    setLookupResult(null);
+
+    try {
+      const match = await lookupDocumentAsync(cleanQuery);
+      if (match) {
+        setLookupResult({
+          status: "success",
+          ref: match.id || match.certNo,
+          paymentNo: match.paymentNo || "N/A",
+          orNumber: match.orNumber || "N/A",
+          name: match.fullName,
+          type: match.documentType || (lang === "en" ? "RTC Court Document Clearance" : "RTC Clearance sa Hukuman"),
+          date: formatEnglishDate(match.dateRequested),
+          clearanceStatus: match.status,
+          remarks: match.remarks || "",
+          location: "Hall of Justice - Counter 3"
+        });
+      } else {
+        setLookupResult({
+          status: "not_found",
+          ref: cleanQuery.toUpperCase(),
+          message: lang === "en"
+            ? `No clearance record found in database for "${cleanQuery}". Please check your Reference ID, OR Number, or submit a new application.`
+            : `Walang nahanap na clearance record sa database para sa "${cleanQuery}". Mangyaring suriin ang inyong reference ID o magsumite ng bagong request.`
+        });
+      }
+    } catch (err) {
       setLookupResult({
-        status: "success",
-        ref: match.id,
-        paymentNo: match.paymentNo,
-        orNumber: match.orNumber,
-        name: match.fullName,
-        type: match.documentType || (lang === "en" ? "RTC Court Document Clearance" : "RTC Clearance sa Hukuman"),
-        date: formatEnglishDate(match.dateRequested),
-        clearanceStatus: match.status,
-        remarks: match.remarks,
-        location: lang === "en" ? "Hall of Justice - Counter 3" : "Hall of Justice - Counter 3"
+        status: "error",
+        message: lang === "en" ? "Database lookup error. Please try again." : "Nagkaroon ng error sa database lookup."
       });
-    } else {
-      setLookupResult({
-        status: "not_found",
-        ref: testRefInput.trim().toUpperCase(),
-        message: lang === "en"
-          ? `No clearance document record found for "${testRefInput.trim()}". Please check your reference ID, payment OR number, or submit a new request.`
-          : `Walang nahanap na clearance record para sa "${testRefInput.trim()}". Mangyaring suriin ang inyong reference ID o magsumite ng bagong request.`
-      });
+    } finally {
+      setIsSearching(false);
     }
   };
 
@@ -638,12 +652,12 @@ function LandingPageContent() {
           <form onSubmit={handleTestLookup} style={{ display: "flex", gap: "12px", alignItems: "flex-end", flexWrap: "wrap" }}>
             <div style={{ flex: 1, minWidth: "280px" }}>
               <label htmlFor="ref-lookup-input" style={{ display: "block", fontSize: "0.875rem", fontWeight: "700", color: "#09090B", marginBottom: "6px" }}>
-                Reference Code, OR Number, or Document ID
+                Reference Code, OR Number, or Full Name
               </label>
               <input
                 id="ref-lookup-input"
                 type="text"
-                placeholder="e.g. DOC-8921, PAY-2026-8921, or OR-981245"
+                placeholder="Enter your Reference Code, OR Number, or Full Name..."
                 value={testRefInput}
                 onChange={(e) => setTestRefInput(e.target.value)}
                 style={{
@@ -659,62 +673,22 @@ function LandingPageContent() {
             </div>
             <button
               type="submit"
+              disabled={isSearching}
               style={{
                 padding: "14px 28px",
                 borderRadius: "12px",
-                backgroundColor: "#09090B",
+                backgroundColor: isSearching ? "#52525B" : "#09090B",
                 color: "#FFFFFF",
                 fontWeight: "700",
                 fontSize: "0.95rem",
                 border: "none",
-                cursor: "pointer",
+                cursor: isSearching ? "wait" : "pointer",
                 minHeight: "50px"
               }}
             >
-              Verify Clearance Status
+              {isSearching ? "Searching Database..." : "Verify Clearance Status"}
             </button>
           </form>
-
-          {/* Sample quick test pills */}
-          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", fontSize: "0.8rem", color: "#71717A" }}>
-            <span>Try sample codes:</span>
-            {["DOC-8921", "DOC-3105", "DOC-4409", "DOC-5219"].map((sampleId) => (
-              <button
-                key={sampleId}
-                type="button"
-                onClick={() => {
-                  setTestRefInput(sampleId);
-                  const match = lookupDocument(sampleId);
-                  if (match) {
-                    setLookupResult({
-                      status: "success",
-                      ref: match.id,
-                      paymentNo: match.paymentNo,
-                      orNumber: match.orNumber,
-                      name: match.fullName,
-                      type: match.documentType || "RTC Court Document Clearance",
-                      date: formatEnglishDate(match.dateRequested),
-                      clearanceStatus: match.status,
-                      remarks: match.remarks,
-                      location: "Hall of Justice - Counter 3"
-                    });
-                  }
-                }}
-                style={{
-                  padding: "4px 10px",
-                  borderRadius: "6px",
-                  backgroundColor: "#F4F4F5",
-                  border: "1px solid #E4E4E7",
-                  color: "#09090B",
-                  fontSize: "0.775rem",
-                  fontWeight: "600",
-                  cursor: "pointer"
-                }}
-              >
-                {sampleId}
-              </button>
-            ))}
-          </div>
 
           {lookupResult && (
             <div style={{
@@ -782,7 +756,7 @@ function LandingPageContent() {
           </div>
 
           <Link
-            href="/login"
+            href="/home"
             style={{
               padding: "8px 20px",
               borderRadius: "9999px",

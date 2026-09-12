@@ -15,7 +15,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   const { documents, markAsPrinted, createStaffDocument, updateDocument, deleteDocument, lookupDocument, lookupDocumentAsync, nextCertNo, updateNextCertNo } = useMock();
 
   // Active sidebar navigation pill
-  const [activeNav, setActiveNav] = useState("dashboard"); // 'dashboard' | 'queue' | 'registry' | 'scanner' | 'create' | 'settings'
+  const [activeNav, setActiveNav] = useState("queue"); // 'dashboard' | 'queue' | 'registry' | 'scanner' | 'create' | 'settings'
   const [mobileEditorTab, setMobileEditorTab] = useState("form"); // 'form' | 'preview'
   // Dashboard filter state
   const [statusFilter, setStatusFilter] = useState("all");

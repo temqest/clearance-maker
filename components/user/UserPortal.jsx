@@ -808,7 +808,7 @@ export default function UserPortal() {
               <div style={{ position: "relative", width: "100%" }}>
                 <input
                   type="text"
-                  placeholder="e.g. PAY-2026-8921 or RTC-2026-88492"
+                  placeholder="Enter your Payment Reference Number or OR Code..."
                   value={paymentNoInput}
                   onChange={(e) => setPaymentNoInput(e.target.value)}
                   style={{
@@ -1302,7 +1302,7 @@ export default function UserPortal() {
                   <input
                     type="text"
                     required
-                    placeholder="e.g. OR-981245"
+                    placeholder="Enter Official Receipt (OR) Number..."
                     value={formData.orNumber || ""}
                     onChange={(e) => setFormData({ ...formData, orNumber: e.target.value })}
                     style={{
