@@ -210,10 +210,19 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
 
   // Handle original editor field updates
   const handleFieldChange = (fieldId, value) => {
-    setFormData((prev) => ({
-      ...prev,
-      [fieldId]: value
-    }));
+    setFormData((prev) => {
+      const updated = {
+        ...prev,
+        [fieldId]: value
+      };
+      // Keep stampOR and orNo in sync if the other was previously identical or blank
+      if (fieldId === "orNo" && (!prev.stampOR || prev.stampOR === prev.orNo)) {
+        updated.stampOR = value;
+      } else if (fieldId === "stampOR" && (!prev.orNo || prev.orNo === prev.stampOR)) {
+        updated.orNo = value;
+      }
+      return updated;
+    });
   };
 
   // Open existing document in split view
@@ -222,6 +231,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
     const docDate = doc?.dateRequested ? new Date(doc.dateRequested) : new Date();
     const validDate = isNaN(docDate.getTime()) ? new Date() : docDate;
     const formattedDate = formatEnglishDate(validDate);
+    const resolvedOrNumber = doc.stampOR || doc.orNumber || doc.orNo || doc.paymentNo || "PAY-2026-8921";
 
     setFormData({
       ...defaultClearanceData,
@@ -234,11 +244,12 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
       address: doc.address || "",
       purpose: (doc.purpose || "LOCAL EMPLOYMENT").toUpperCase(),
       civilStatus: doc.civilStatus || "Single",
-      orNo: doc.orNumber || doc.paymentNo || "PAY-2026-8921",
+      stampOR: resolvedOrNumber,
+      orNo: resolvedOrNumber,
       ctc: doc.ctcNumber || doc.ctc || defaultClearanceData.ctc,
       issuedOn: formattedDate,
       orDate: formattedDate,
-      stampDate: formattedDate,
+      stampDate: doc.stampDate || formattedDate,
       givenDay: validDate.getDate().toString(),
       givenMonth: validDate.toLocaleDateString("en-US", { month: "long" }),
       givenYear: validDate.getFullYear().toString(),
@@ -454,7 +465,8 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
         birthPlace: doc?.birthPlace || formData.birthPlace,
         gender: doc?.gender || formData.gender,
         contactNo: doc?.contactNo || formData.contactNo,
-        orNo: doc?.orNo || doc?.orNumber || doc?.paymentNo || formData.orNo || "OR-ONLINE",
+        stampOR: doc?.stampOR || formData.stampOR || doc?.orNo || doc?.orNumber || doc?.paymentNo || formData.orNo || "PAY-2026-8921",
+        orNo: doc?.orNo || doc?.orNumber || doc?.paymentNo || formData.orNo || "PAY-2026-8921",
         orDate: doc?.orDate || formatEnglishDate(doc?.dateRequested) || formData.orDate || formatEnglishDate(new Date()),
         stampDate: doc?.stampDate || formatEnglishDate(doc?.dateRequested) || formData.stampDate || formatEnglishDate(new Date()),
         ctc: doc?.ctc || doc?.ctcNumber || formData.ctc,
@@ -756,7 +768,8 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               fontSize: "0.875rem",
               display: "flex",
               alignItems: "center",
-              justifyContent: "center"
+              justifyContent: "center",
+              flexShrink: 0
             }}>
               I
             </div>
@@ -792,7 +805,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
       </aside>
 
       {/* MAIN WORKSPACE PANEL */}
-      <main className="staff-main-panel" style={{ flex: 1, padding: "28px 36px", overflowY: "auto" }}>
+      <main className="staff-main-panel" style={{ flex: 1, minWidth: 0, padding: "20px 24px", overflowY: "auto" }}>
 
         {/* 1. DASHBOARD OVERVIEW */}
         {activeNav === "dashboard" && (
@@ -2386,7 +2399,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               </button>
             </div>
 
-            <div className="staff-editor-grid" style={{ display: "grid", gridTemplateColumns: "400px 1fr", gap: "28px", alignItems: "flex-start" }}>
+            <div className="staff-editor-grid" style={{ display: "grid", gridTemplateColumns: "380px minmax(0, 1fr)", gap: "20px", alignItems: "flex-start" }}>
               {/* LEFT FORM COLUMN: EMBEDDED EditorPanel */}
               <div
                 className={mobileEditorTab === "preview" ? "staff-desktop-only" : ""}
@@ -2399,8 +2412,9 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   display: "flex",
                   flexDirection: "column",
                   gap: "16px",
-                  maxHeight: "calc(100vh - 170px)",
-                  overflowY: "auto"
+                  maxHeight: "calc(100vh - 140px)",
+                  overflowY: "auto",
+                  boxSizing: "border-box"
                 }}
               >
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: "1px solid #F4F4F5", paddingBottom: "12px" }}>
@@ -2432,6 +2446,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   signatureSrc={signatureSrc}
                   onSignatureChange={(src) => setSignatureSrc(src)}
                   onSignatureRemove={() => setSignatureSrc("")}
+                  embedded={true}
                 />
 
                 <button
@@ -2498,14 +2513,16 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   backgroundColor: "#FFFFFF",
                   borderRadius: "24px",
                   border: "1px solid #E4E4E7",
-                  padding: "20px",
-                  height: "calc(100vh - 170px)",
+                  padding: "16px",
+                  height: "calc(100vh - 140px)",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
                   display: "flex",
-                  flexDirection: "column"
+                  flexDirection: "column",
+                  minWidth: 0,
+                  boxSizing: "border-box"
                 }}
               >
-                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "14px", flexShrink: 0 }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "12px", flexShrink: 0 }}>
                   <span className="staff-badge-preview" style={{ fontSize: "0.725rem", fontWeight: 800, color: "#D97706", backgroundColor: "#FEF3C7", padding: "4px 12px", borderRadius: "9999px" }}>
                     LIVE CLEARANCE PREVIEW (8.5" x 13" OFFICIAL RTC CERTIFICATE)
                   </span>
@@ -2518,8 +2535,8 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   borderRadius: "16px",
                   overflowY: "auto",
                   overflowX: "hidden",
-                  border: "1px solid #E4E4E7",
-                  backgroundColor: "#F4F4F5"
+                  border: "1px solid #94A3B8",
+                  backgroundColor: "#CBD5E1"
                 }}>
                   <PreviewPanel
                     formData={formData}

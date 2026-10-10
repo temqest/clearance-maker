@@ -301,9 +301,10 @@ export default function PreviewPanel({
 
     const updateScale = () => {
       if (!containerRef.current) return;
-      const containerWidth = containerRef.current.clientWidth;
-      if (containerWidth > 0 && containerWidth < 830) {
-        const targetScale = Math.min(1, Math.max(0.35, (containerWidth - 12) / 816));
+      const parent = containerRef.current.parentElement || containerRef.current;
+      const containerWidth = parent.clientWidth || containerRef.current.clientWidth;
+      if (containerWidth > 0 && containerWidth < 816) {
+        const targetScale = Math.min(1, Math.max(0.35, containerWidth / 816));
         setScale(targetScale);
       } else {
         setScale(1);
@@ -315,6 +316,9 @@ export default function PreviewPanel({
     let resizeObserver;
     if (typeof ResizeObserver !== "undefined") {
       resizeObserver = new ResizeObserver(updateScale);
+      if (containerRef.current.parentElement) {
+        resizeObserver.observe(containerRef.current.parentElement);
+      }
       resizeObserver.observe(containerRef.current);
     } else {
       window.addEventListener("resize", updateScale);

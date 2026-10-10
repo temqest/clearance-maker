@@ -1,11 +1,11 @@
 .previewPanel {
   flex: 1;
-  background: var(--bg-preview);
+  background: #CBD5E1;
   overflow-y: auto;
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: 20px;
+  padding: 16px 8px;
   width: 100%;
   box-sizing: border-box;
 }
@@ -32,7 +32,7 @@
   min-height: 1248px;
   border: 0;
   background: #fff;
-  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.6);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.18);
   flex-shrink: 0;
 }
 

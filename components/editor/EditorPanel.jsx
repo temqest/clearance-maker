@@ -14,7 +14,9 @@ export default function EditorPanel({
   onPhotoRemove,
   signatureSrc,
   onSignatureChange,
-  onSignatureRemove
+  onSignatureRemove,
+  embedded = false,
+  className = ""
 }) {
   const signatureInputRef = useRef(null);
 
@@ -38,7 +40,7 @@ export default function EditorPanel({
   };
 
   return (
-    <aside className={`${styles.panel} noPrint`}>
+    <aside className={`${styles.panel} ${embedded ? styles.embeddedPanel : ""} ${className} noPrint`}>
       {formSections.map((section) => (
         <section key={section.title} className={styles.sectionBlock}>
           <div className={styles.sectionTitle}>{section.title}</div>
