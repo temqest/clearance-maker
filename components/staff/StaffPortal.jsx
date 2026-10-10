@@ -61,6 +61,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
   const [formData, setFormData] = useState(defaultClearanceData);
   const [photoSrc, setPhotoSrc] = useState("");
   const [signatureSrc, setSignatureSrc] = useState("");
+  const [saveSuccessToast, setSaveSuccessToast] = useState(false);
 
   const handlePerformLogout = async () => {
     if (onLogout) {
@@ -223,6 +224,48 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
       }
       return updated;
     });
+
+    // If inspecting an existing record, update the document store outside of state updater
+    if (inspectedDoc && inspectedDoc.id) {
+      const docUpdates = {
+        ...inspectedDoc,
+        ...formData,
+        [fieldId]: value,
+        photoSrc: photoSrc
+      };
+      if (fieldId === "fullName") docUpdates.fullName = value;
+      if (fieldId === "purpose") docUpdates.purpose = value;
+      if (fieldId === "address") docUpdates.address = value;
+      if (fieldId === "civilStatus") docUpdates.civilStatus = value;
+      if (fieldId === "ctc") docUpdates.ctcNumber = value;
+      if (fieldId === "orNo") {
+        docUpdates.orNumber = value;
+        docUpdates.stampOR = value;
+      }
+      if (fieldId === "stampOR") {
+        docUpdates.stampOR = value;
+        docUpdates.orNumber = value;
+      }
+
+      updateDocument(inspectedDoc.id, docUpdates);
+      setInspectedDoc((old) => old ? { ...old, ...docUpdates } : old);
+    }
+  };
+
+  const handlePhotoUpdate = (src) => {
+    setPhotoSrc(src);
+    if (inspectedDoc && inspectedDoc.id) {
+      updateDocument(inspectedDoc.id, { photoSrc: src });
+      setInspectedDoc((prev) => prev ? { ...prev, photoSrc: src } : prev);
+    }
+  };
+
+  const handlePhotoRemoval = () => {
+    setPhotoSrc("");
+    if (inspectedDoc && inspectedDoc.id) {
+      updateDocument(inspectedDoc.id, { photoSrc: "" });
+      setInspectedDoc((prev) => prev ? { ...prev, photoSrc: "" } : prev);
+    }
   };
 
   // Open existing document in split view
@@ -283,6 +326,50 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
     setActiveNav("create");
   };
 
+  // Save record changes without printing
+  const handleSaveRecordEdits = (e) => {
+    if (e && e.preventDefault) e.preventDefault();
+    if (!formData.fullName) {
+      alert("Please enter the Applicant's Full Name.");
+      return;
+    }
+
+    const currentPhoto = photoSrc;
+
+    let targetDoc;
+    if (inspectedDoc && inspectedDoc.id) {
+      targetDoc = {
+        ...inspectedDoc,
+        ...formData,
+        fullName: formData.fullName,
+        purpose: formData.purpose,
+        address: formData.address,
+        civilStatus: formData.civilStatus,
+        ctcNumber: formData.ctc,
+        orNumber: formData.orNo,
+        photoSrc: currentPhoto
+      };
+      updateDocument(inspectedDoc.id, targetDoc);
+      setInspectedDoc(targetDoc);
+    } else {
+      targetDoc = createStaffDocument({
+        ...formData,
+        fullName: formData.fullName.toUpperCase(),
+        address: formData.address || "",
+        purpose: (formData.purpose || "LOCAL EMPLOYMENT").toUpperCase(),
+        civilStatus: formData.civilStatus || "Single",
+        ctcNumber: formData.ctc,
+        orNumber: formData.orNo,
+        amountPaid: "₱150.00",
+        photoSrc: currentPhoto
+      });
+      setInspectedDoc(targetDoc);
+    }
+
+    setSaveSuccessToast(true);
+    setTimeout(() => setSaveSuccessToast(false), 3000);
+  };
+
   // Handle direct staff issuance from editor
   const handleCreateDirectDoc = (e) => {
     if (e && e.preventDefault) e.preventDefault();
@@ -291,14 +378,20 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
       return;
     }
 
-    const currentPhoto = photoSrc || inspectedDoc?.photoSrc || "";
+    const currentPhoto = photoSrc;
 
     let targetDoc;
     if (inspectedDoc && inspectedDoc.id) {
-      // Update existing document status to "Printed & Released" and preserve photoSrc
+      // Update existing document status to "Printed & Released" and save edited form data
       targetDoc = {
         ...inspectedDoc,
         ...formData,
+        fullName: formData.fullName,
+        purpose: formData.purpose,
+        address: formData.address,
+        civilStatus: formData.civilStatus,
+        ctcNumber: formData.ctc,
+        orNumber: formData.orNo,
         status: "Printed & Released",
         photoSrc: currentPhoto
       };
@@ -322,8 +415,8 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
 
     // Print with full complete formData & photo
     handlePrintActualDocument({
-      ...formData,
       ...targetDoc,
+      ...formData,
       photoSrc: currentPhoto
     });
   };
@@ -454,45 +547,47 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
     try {
       const mergedDocData = {
         ...defaultClearanceData,
-        ...formData,
         ...doc,
-        fullName: doc?.fullName || formData.fullName,
-        address: doc?.address || formData.address,
-        purpose: doc?.purpose || formData.purpose,
-        civilStatus: doc?.civilStatus || formData.civilStatus || "Single",
-        nationality: doc?.nationality || doc?.citizenship || formData.nationality || "Filipino",
-        dob: doc?.dob || doc?.birthDate || formData.dob,
-        birthPlace: doc?.birthPlace || formData.birthPlace,
-        gender: doc?.gender || formData.gender,
-        contactNo: doc?.contactNo || formData.contactNo,
-        stampOR: doc?.stampOR || formData.stampOR || doc?.orNo || doc?.orNumber || doc?.paymentNo || formData.orNo || "PAY-2026-8921",
-        orNo: doc?.orNo || doc?.orNumber || doc?.paymentNo || formData.orNo || "PAY-2026-8921",
-        orDate: doc?.orDate || formatEnglishDate(doc?.dateRequested) || formData.orDate || formatEnglishDate(new Date()),
-        stampDate: doc?.stampDate || formatEnglishDate(doc?.dateRequested) || formData.stampDate || formatEnglishDate(new Date()),
-        ctc: doc?.ctc || doc?.ctcNumber || formData.ctc,
-        issuedAt: doc?.issuedAt || formData.issuedAt || "Iriga City",
-        issuedOn: doc?.issuedOn || formatEnglishDate(doc?.dateRequested) || formData.issuedOn || formatEnglishDate(new Date()),
-        certNo: doc?.certNo || formData.certNo || (doc?.id ? doc.id.replace(/^DOC-/, "") : String(nextCertNo || 1)),
-        finding: doc?.finding || formData.finding || "NO DEROGATORY RECORD FOUND",
-        givenDay: doc?.givenDay || formData.givenDay || new Date().getDate().toString(),
-        givenMonth: doc?.givenMonth || formData.givenMonth || new Date().toLocaleDateString("en-US", { month: "long" }),
-        givenYear: doc?.givenYear || formData.givenYear || new Date().getFullYear().toString(),
-        givenPlace: doc?.givenPlace || formData.givenPlace || "Iriga City, Camarines Sur",
-        noteText: doc?.noteText || formData.noteText || "Valid for 6 months from the date of issue.",
-        noteInitials: doc?.noteInitials || formData.noteInitials || "MBL/jnr",
-        clerkName: doc?.clerkName || formData.clerkName,
-        clerkTitle1: doc?.clerkTitle1 || formData.clerkTitle1,
-        clerkTitle2: doc?.clerkTitle2 || formData.clerkTitle2,
-        assistantClerkName: doc?.assistantClerkName || formData.assistantClerkName,
-        assistantClerkTitle: doc?.assistantClerkTitle || formData.assistantClerkTitle,
-        courtName: doc?.courtName || formData.courtName,
-        judicialRegion: doc?.judicialRegion || formData.judicialRegion,
-        courtCity: doc?.courtCity || formData.courtCity,
-        courtEmail: doc?.courtEmail || formData.courtEmail,
-        courtTel: doc?.courtTel || formData.courtTel,
+        ...formData,
+        fullName: formData.fullName || doc?.fullName || "",
+        address: formData.address !== undefined ? formData.address : (doc?.address || ""),
+        purpose: formData.purpose || doc?.purpose || "LOCAL EMPLOYMENT",
+        civilStatus: formData.civilStatus || doc?.civilStatus || "Single",
+        nationality: formData.nationality || doc?.nationality || doc?.citizenship || "Filipino",
+        dob: formData.dob || doc?.dob || doc?.birthDate || "",
+        birthPlace: formData.birthPlace || doc?.birthPlace || "",
+        gender: formData.gender || doc?.gender || "Male",
+        contactNo: formData.contactNo || doc?.contactNo || "",
+        stampOR: formData.stampOR || doc?.stampOR || formData.orNo || doc?.orNo || "PAY-2026-8921",
+        orNo: formData.orNo || doc?.orNo || doc?.orNumber || "PAY-2026-8921",
+        orDate: formData.orDate || doc?.orDate || formatEnglishDate(new Date()),
+        stampDate: formData.stampDate || doc?.stampDate || formatEnglishDate(new Date()),
+        ctc: formData.ctc || doc?.ctc || doc?.ctcNumber || "",
+        issuedAt: formData.issuedAt || doc?.issuedAt || "Iriga City",
+        issuedOn: formData.issuedOn || doc?.issuedOn || formatEnglishDate(new Date()),
+        certNo: formData.certNo || doc?.certNo || (doc?.id ? doc.id.replace(/^DOC-/, "") : String(nextCertNo || 1)),
+        finding: formData.finding || doc?.finding || "NO DEROGATORY RECORD FOUND",
+        givenDay: formData.givenDay || doc?.givenDay || new Date().getDate().toString(),
+        givenMonth: formData.givenMonth || doc?.givenMonth || new Date().toLocaleDateString("en-US", { month: "long" }),
+        givenYear: formData.givenYear || doc?.givenYear || new Date().getFullYear().toString(),
+        givenPlace: formData.givenPlace || doc?.givenPlace || "Iriga City, Camarines Sur",
+        noteText: formData.noteText || doc?.noteText || "Valid for 6 months from the date of issue.",
+        noteInitials: formData.noteInitials || doc?.noteInitials || "MBL/jnr",
+        clerkName: formData.clerkName || doc?.clerkName || "HARLETTE R. ARROYO-POTENCIO",
+        clerkTitle1: formData.clerkTitle1 || doc?.clerkTitle1 || "Clerk of Court VI",
+        clerkTitle2: formData.clerkTitle2 || doc?.clerkTitle2 || "Ex-Officio Provincial Sheriff & Notary Public",
+        assistantClerkName: formData.assistantClerkName || doc?.assistantClerkName || "",
+        assistantClerkTitle: formData.assistantClerkTitle || doc?.assistantClerkTitle || "",
+        courtName: formData.courtName || doc?.courtName || "REGIONAL TRIAL COURT",
+        judicialRegion: formData.judicialRegion || doc?.judicialRegion || "5th Judicial Region",
+        courtCity: formData.courtCity || doc?.courtCity || "Iriga City",
+        courtEmail: formData.courtEmail || doc?.courtEmail || "rtc1iriocc@judiciary.gov.ph",
+        courtTel: formData.courtTel || doc?.courtTel || "(054) 299-5922",
       };
 
-      const fullHtml = await buildActualDocumentHtml(mergedDocData, photoSrc || doc?.photoSrc);
+      const photoToPrint = typeof photoSrc === "string" ? photoSrc : (doc?.photoSrc || "");
+
+      const fullHtml = await buildActualDocumentHtml(mergedDocData, photoToPrint);
 
       let iframe = document.getElementById("staff-print-iframe");
       if (!iframe) {
@@ -2282,6 +2377,35 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
         {/* 5. CLEARANCE DOCUMENT SPLIT VIEW (WITH BACK BUTTON) */}
         {activeNav === "create" && (
           <div>
+            {saveSuccessToast && (
+              <div style={{
+                backgroundColor: "#ECFDF5",
+                border: "1px solid #6EE7B7",
+                color: "#065F46",
+                padding: "12px 20px",
+                borderRadius: "16px",
+                marginBottom: "16px",
+                fontWeight: 700,
+                fontSize: "0.9rem",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+                boxShadow: "0 2px 8px rgba(16, 185, 129, 0.12)"
+              }}>
+                <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+                  <span style={{ fontSize: "1.1rem" }}>✓</span>
+                  <span>Document changes saved successfully to database & registry!</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setSaveSuccessToast(false)}
+                  style={{ background: "none", border: "none", color: "#065F46", cursor: "pointer", fontWeight: 800, fontSize: "1rem" }}
+                >
+                  ✕
+                </button>
+              </div>
+            )}
+
             {scannedToast && (
               <div style={{
                 backgroundColor: "#ECFDF5",
@@ -2336,12 +2460,38 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                 ← Back to Queue
               </button>
 
-              <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "10px", flexWrap: "wrap" }}>
                 {inspectedDoc && (
-                  <span style={{ fontSize: "0.825rem", color: "#71717A", fontWeight: 600 }}>
+                  <span style={{ fontSize: "0.825rem", color: "#71717A", fontWeight: 600, marginRight: "4px" }}>
                     Editing: <strong style={{ color: "#09090B", fontFamily: "monospace" }}>{inspectedDoc.id}</strong>
                   </span>
                 )}
+
+                <button
+                  type="button"
+                  onClick={handleSaveRecordEdits}
+                  style={{
+                    padding: "9px 18px",
+                    backgroundColor: "#FFFFFF",
+                    color: "#09090B",
+                    border: "1px solid #D4D4D8",
+                    borderRadius: "9999px",
+                    fontWeight: 700,
+                    fontSize: "0.85rem",
+                    cursor: "pointer",
+                    display: "inline-flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    minHeight: "42px"
+                  }}
+                >
+                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                    <polyline points="17 21 17 13 7 13 7 21"/>
+                    <polyline points="7 3 7 8 15 8"/>
+                  </svg>
+                  Save Changes
+                </button>
 
                 <button
                   type="button"
@@ -2441,34 +2591,67 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                   formData={formData}
                   onFieldChange={handleFieldChange}
                   photoSrc={photoSrc}
-                  onPhotoChange={(src) => setPhotoSrc(src)}
-                  onPhotoRemove={() => setPhotoSrc("")}
+                  onPhotoChange={handlePhotoUpdate}
+                  onPhotoRemove={handlePhotoRemoval}
                   signatureSrc={signatureSrc}
                   onSignatureChange={(src) => setSignatureSrc(src)}
                   onSignatureRemove={() => setSignatureSrc("")}
                   embedded={true}
                 />
 
-                <button
-                  type="button"
-                  onClick={handleCreateDirectDoc}
-                  style={{
-                    padding: "14px 24px",
-                    backgroundColor: "#09090B",
-                    color: "#FFFFFF",
-                    border: "none",
-                    borderRadius: "9999px",
-                    fontWeight: 800,
-                    fontSize: "0.9rem",
-                    cursor: "pointer",
-                    marginTop: "8px",
-                    boxShadow: "0 4px 14px rgba(9, 9, 11, 0.15)",
-                    width: "100%",
-                    minHeight: "46px"
-                  }}
-                >
-                  Print →
-                </button>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", marginTop: "4px" }}>
+                  <button
+                    type="button"
+                    onClick={handleSaveRecordEdits}
+                    style={{
+                      padding: "8px 12px",
+                      backgroundColor: "#F4F4F5",
+                      color: "#09090B",
+                      border: "1px solid #D4D4D8",
+                      borderRadius: "9999px",
+                      fontWeight: 700,
+                      fontSize: "0.775rem",
+                      cursor: "pointer",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "5px",
+                      minHeight: "36px",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2">
+                      <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/>
+                      <polyline points="17 21 17 13 7 13 7 21"/>
+                      <polyline points="7 3 7 8 15 8"/>
+                    </svg>
+                    Save Changes
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={handleCreateDirectDoc}
+                    style={{
+                      padding: "8px 12px",
+                      backgroundColor: "#09090B",
+                      color: "#FFFFFF",
+                      border: "none",
+                      borderRadius: "9999px",
+                      fontWeight: 700,
+                      fontSize: "0.775rem",
+                      cursor: "pointer",
+                      boxShadow: "0 2px 8px rgba(9, 9, 11, 0.12)",
+                      display: "inline-flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      gap: "5px",
+                      minHeight: "36px",
+                      whiteSpace: "nowrap"
+                    }}
+                  >
+                    Print →
+                  </button>
+                </div>
 
                 {/* DANGER ZONE: SAFE PLACEMENT FOR DELETE RECORD BUTTON */}
                 {inspectedDoc && (
