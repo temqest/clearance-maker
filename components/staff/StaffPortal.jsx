@@ -805,7 +805,7 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
       </aside>
 
       {/* MAIN WORKSPACE PANEL */}
-      <main className="staff-main-panel" style={{ flex: 1, minWidth: 0, padding: "20px 24px", overflowY: "auto" }}>
+      <main className="staff-main-panel" style={{ flex: 1, minWidth: 0, padding: "16px 20px", overflowY: "auto" }}>
 
         {/* 1. DASHBOARD OVERVIEW */}
         {activeNav === "dashboard" && (
@@ -2399,20 +2399,20 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
               </button>
             </div>
 
-            <div className="staff-editor-grid" style={{ display: "grid", gridTemplateColumns: "380px minmax(0, 1fr)", gap: "20px", alignItems: "flex-start" }}>
+            <div className="staff-editor-grid" style={{ display: "grid", gridTemplateColumns: "360px minmax(0, 1fr)", gap: "16px", alignItems: "flex-start" }}>
               {/* LEFT FORM COLUMN: EMBEDDED EditorPanel */}
               <div
                 className={mobileEditorTab === "preview" ? "staff-desktop-only" : ""}
                 style={{
                   backgroundColor: "#FFFFFF",
-                  padding: "20px",
-                  borderRadius: "24px",
+                  padding: "18px",
+                  borderRadius: "20px",
                   border: "1px solid #E4E4E7",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
                   display: "flex",
                   flexDirection: "column",
-                  gap: "16px",
-                  maxHeight: "calc(100vh - 140px)",
+                  gap: "14px",
+                  maxHeight: "calc(100vh - 146px)",
                   overflowY: "auto",
                   boxSizing: "border-box"
                 }}
@@ -2511,10 +2511,10 @@ export default function StaffPortal({ headerSearchQuery = "", onLogout }) {
                 className={mobileEditorTab === "form" ? "staff-desktop-only" : ""}
                 style={{
                   backgroundColor: "#FFFFFF",
-                  borderRadius: "24px",
+                  borderRadius: "20px",
                   border: "1px solid #E4E4E7",
-                  padding: "16px",
-                  height: "calc(100vh - 140px)",
+                  padding: "14px",
+                  height: "calc(100vh - 146px)",
                   boxShadow: "0 4px 20px rgba(0,0,0,0.02)",
                   display: "flex",
                   flexDirection: "column",

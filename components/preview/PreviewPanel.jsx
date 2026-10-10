@@ -301,10 +301,14 @@ export default function PreviewPanel({
 
     const updateScale = () => {
       if (!containerRef.current) return;
-      const parent = containerRef.current.parentElement || containerRef.current;
-      const containerWidth = parent.clientWidth || containerRef.current.clientWidth;
-      if (containerWidth > 0 && containerWidth < 816) {
-        const targetScale = Math.min(1, Math.max(0.35, containerWidth / 816));
+      const containerEl = containerRef.current;
+      const parentEl = containerEl.parentElement;
+      const rawWidth = (parentEl && parentEl.clientWidth > 0) ? parentEl.clientWidth : containerEl.clientWidth;
+      
+      // Reserve 32px (16px padding on each side) for clean framing and scrollbar clearance
+      const availableWidth = Math.max(120, rawWidth - 32);
+      if (availableWidth < 816) {
+        const targetScale = Math.min(1, Math.max(0.3, availableWidth / 816));
         setScale(targetScale);
       } else {
         setScale(1);
